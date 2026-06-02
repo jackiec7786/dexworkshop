@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 
 // GET /api/jobs -> all jobs for the logged-in user (RLS filters by owner)
 export async function GET() {
