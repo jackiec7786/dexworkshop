@@ -1,20 +1,20 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase";
+import { useUser } from "@stackframe/stack";
 import {
   Job, Settings, SERVICE_TYPES, MARK_COLORS, DEX_CODES, CODE_KEYS, pkr, calc, CarDiagram, PrintDoc,
 } from "@/components/shared";
 
 export default function Dashboard() {
   const router = useRouter();
-  const supabase = supabaseBrowser();
+  const user = useUser();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"inspection" | "quote">("inspection");
   const [view, setView] = useState("top");
-  const [activeType, setActiveType] = useState("DD"); // default to Dents/Dings
+  const [activeType, setActiveType] = useState("DD");
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>({
@@ -23,24 +23,20 @@ export default function Dashboard() {
   });
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // initial load — gate on auth, then fetch jobs + settings
   useEffect(() => {
+    if (!user) { router.push("/login"); return; }
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      const res = await fetch("/api/jobs");
-      if (res.ok) setJobs(await res.json());
-      const { data: s } = await supabase.from("settings").select("*").eq("owner", user.id).single();
-      if (s) setSettings(s as Settings);
+      const [r1, r2] = await Promise.all([fetch("/api/jobs"), fetch("/api/settings")]);
+      if (r1.ok) setJobs(await r1.json());
+      if (r2.ok) { const s = await r2.json(); if (s) setSettings(s); }
       setLoading(false);
     })();
-  }, []); // eslint-disable-line
+  }, [!!user]); // eslint-disable-line
 
   const active = jobs.find((j) => j.id === activeId) || null;
   const cur = settings.currency || "Rs";
-  const money = pkr; // Pakistani style: 8,500/-
+  const money = pkr;
 
-  // debounced save so typing doesn't spam the DB (one PATCH per 600ms of quiet)
   const saveJob = useCallback((job: Job) => {
     clearTimeout(saveTimers.current[job.id]);
     saveTimers.current[job.id] = setTimeout(() => {
@@ -77,26 +73,26 @@ export default function Dashboard() {
   };
 
   const saveSettings = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("settings").upsert({ owner: user.id, ...settings });
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings),
+    });
     setShowSettings(false);
   };
 
-  const signOut = async () => { await supabase.auth.signOut(); router.push("/login"); };
+  const signOut = async () => { await user?.signOut(); router.push("/login"); };
 
-  // ---- photo upload to Storage (photos/<uid>/<jobid>/<file>) ----
   const uploadPhoto = async (file: File) => {
     if (!active) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const path = `${user.id}/${active.id}/${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from("photos").upload(path, file);
-    if (error) { alert("Upload failed: " + error.message); return; }
-    updateActive((j) => ({ ...j, photos: [...j.photos, { path, caption: "" }] }));
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("jobId", active.id);
+    const res = await fetch("/api/photos", { method: "POST", body: formData });
+    if (!res.ok) { alert("Upload failed"); return; }
+    const { url } = await res.json();
+    updateActive((j) => ({ ...j, photos: [...j.photos, { url, caption: "" }] }));
   };
-  const photoUrl = (path: string) =>
-    supabase.storage.from("photos").getPublicUrl(path).data.publicUrl;
 
   if (loading) return <Center>Loading workshop…</Center>;
 
@@ -224,10 +220,10 @@ export default function Dashboard() {
                       style={{ ...fld, padding: 8 }} />
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
                       {active.photos.map((p) => (
-                        <div key={p.path} style={{ position: "relative" }}>
+                        <div key={p.url} style={{ position: "relative" }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={photoUrl(p.path)} alt="" style={{ width: 110, height: 80, objectFit: "cover", borderRadius: 6 }} />
-                          <button onClick={() => updateActive((j) => ({ ...j, photos: j.photos.filter((x) => x.path !== p.path) }))}
+                          <img src={p.url} alt="" style={{ width: 110, height: 80, objectFit: "cover", borderRadius: 6 }} />
+                          <button onClick={() => updateActive((j) => ({ ...j, photos: j.photos.filter((x) => x.url !== p.url) }))}
                             style={{ position: "absolute", top: 2, right: 2, background: "#0c0d0fcc", color: "#ff8080",
                               border: "none", borderRadius: 4, cursor: "pointer", padding: "1px 6px" }}>×</button>
                         </div>))}

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackServerApp } from "@/lib/stack";
 
 export const metadata: Metadata = {
-  title: "Spice Workshop",
+  title: "DEX Workshop",
   description: "Inspection, quotes & invoices for auto detailing workshops",
 };
 
@@ -27,7 +29,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        <StackProvider app={stackServerApp}>
+          <StackTheme>
+            {children}
+          </StackTheme>
+        </StackProvider>
+      </body>
     </html>
   );
 }

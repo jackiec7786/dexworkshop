@@ -1,28 +1,34 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase";
+import { useStackApp, useUser } from "@stackframe/stack";
 
-export default function Login() {
+export default function LoginClient() {
   const router = useRouter();
-  const supabase = supabaseBrowser();
+  const app = useStackApp();
+  const user = useUser();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (user) router.replace("/");
+  }, [user, router]);
+
   const go = async () => {
     setBusy(true); setMsg("");
-    const fn = mode === "signin"
-      ? supabase.auth.signInWithPassword({ email, password: pw })
-      : supabase.auth.signUp({ email, password: pw });
-    const { error } = await fn;
+    if (mode === "signin") {
+      const res = await app.signInWithCredential({ email, password: pw });
+      if (res?.status === "error") { setMsg(res.error?.message ?? "Sign in failed"); }
+      else { router.replace("/"); }
+    } else {
+      const res = await app.signUpWithCredential({ email, password: pw });
+      if (res?.status === "error") { setMsg(res.error?.message ?? "Sign up failed"); }
+      else { setMsg("Account created — you can sign in now."); setMode("signin"); }
+    }
     setBusy(false);
-    if (error) { setMsg(error.message); return; }
-    if (mode === "signup") { setMsg("Account created. You can sign in now."); setMode("signin"); return; }
-    router.push("/");
-    router.refresh();
   };
 
   return (

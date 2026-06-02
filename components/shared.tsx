@@ -29,7 +29,7 @@ export type Job = {
   discount: number;
   tax_rate: number;
   deposit: number;
-  photos: { path: string; caption?: string }[];
+  photos: { url: string; caption?: string }[];
   created_at: string;
 };
 export type Settings = {
