@@ -22,7 +22,6 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [tab, setTab] = useState<"inspection" | "quote">("inspection");
-  const [view, setView] = useState("top");
   const [activeType, setActiveType] = useState("DD");
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -85,7 +84,7 @@ export default function Dashboard() {
     }));
   };
 
-  const selectJob = (id: string) => { setActiveId(id); setTab("inspection"); setView("top"); };
+  const selectJob = (id: string) => { setActiveId(id); setTab("inspection"); };
 
   const newJob = async () => {
     const res = await fetch("/api/jobs", { method: "POST" });
@@ -368,20 +367,8 @@ export default function Dashboard() {
                       {!isMobile && <span style={{ marginLeft: 8 }}>· tap diagram to drop a mark</span>}
                     </div>
 
-                    {/* View selector — horizontal scroll */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 10, overflowX: "auto",
-                      scrollbarWidth: "none" }}>
-                      {["top", "left", "right", "front"].map((v) => (
-                        <button key={v} onClick={() => setView(v)}
-                          style={{ ...btn(view === v ? "#f3f4f6" : "transparent", view === v ? "#111827" : "#6b7280"),
-                            whiteSpace: "nowrap", flexShrink: 0, minHeight: 0 }}>
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div style={{ maxWidth: isMobile ? "100%" : 520 }}>
-                      <CarDiagram view={view} marks={active.marks}
+                    <div style={{ maxWidth: isMobile ? "100%" : 620 }}>
+                      <CarDiagram view="diagram" marks={active.marks}
                         onAdd={(p) => updateActive((j) => ({ ...j, marks: [...j.marks,
                           { id: "m" + Date.now(), type: activeType, note: "", ...p }] }))}
                         onRemove={(id) => updateActive((j) => ({
@@ -398,7 +385,6 @@ export default function Dashboard() {
                               background: MARK_COLORS[m.type], flexShrink: 0 }} />
                             <b>{m.type}</b>
                             <span style={{ color: tokens.muted }}>{DEX_CODES[m.type]}</span>
-                            <span style={{ color: tokens.faint, fontSize: 11 }}>· {m.view}</span>
                             <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
                               <input type="number" placeholder="sq in" value={m.sqin ?? ""}
                                 onChange={(e) => updateActive((j) => ({ ...j, marks: j.marks.map((x) =>
