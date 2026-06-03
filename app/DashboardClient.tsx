@@ -113,7 +113,6 @@ export default function Dashboard() {
           status: job.status, customer: job.customer, vehicle: job.vehicle,
           marks: job.marks, line_items: job.line_items, notes: job.notes,
           discount: job.discount, tax_rate: job.tax_rate, deposit: job.deposit, photos: job.photos,
-          scheduled_date: job.scheduled_date ?? null,
         }),
       });
       if (res.status === 401) onAuthError();
@@ -216,6 +215,14 @@ export default function Dashboard() {
   const addItem = () =>
     updateActive((j) => ({ ...j,
       line_items: [...j.line_items, { id: "li" + Date.now(), desc: "", type: "PDR", qty: 1, price: 0 }] }));
+
+  // ─── Scheduled date ──────────────────────────────────────────────────────
+  const saveScheduledDate = useCallback(async (jobId: string, date: string | null) => {
+    await fetch(`/api/jobs/${jobId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scheduled_date: date }),
+    });
+  }, []);
 
   // ─── Expense CRUD ─────────────────────────────────────────────────────────
   const saveExpense = async () => {
@@ -564,7 +571,11 @@ export default function Dashboard() {
                           <label style={lbl}>Scheduled Date</label>
                           <input type="date" style={{ ...fld, width: "auto" }}
                             value={active.scheduled_date || ""}
-                            onChange={(e) => updateActive((j) => ({ ...j, scheduled_date: e.target.value || null }))} />
+                            onChange={(e) => {
+                              const d = e.target.value || null;
+                              updateActive((j) => ({ ...j, scheduled_date: d }));
+                              saveScheduledDate(active.id, d);
+                            }} />
                         </div>
                         {active.scheduled_date && (
                           <div style={{ marginTop: 20, fontSize: 13, color: tokens.muted }}>
@@ -575,7 +586,10 @@ export default function Dashboard() {
                         {active.scheduled_date && (
                           <button style={{ marginTop: 20, ...btn("#fef2f2", tokens.danger),
                             padding: "5px 10px", fontSize: 12, minHeight: 0 }}
-                            onClick={() => updateActive((j) => ({ ...j, scheduled_date: null }))}>
+                            onClick={() => {
+                              updateActive((j) => ({ ...j, scheduled_date: null }));
+                              saveScheduledDate(active.id, null);
+                            }}>
                             Clear
                           </button>
                         )}
