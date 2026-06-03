@@ -37,6 +37,22 @@ export type Settings = {
   address: string; currency: string; tax_rate: number;
 };
 
+export const EXPENSE_CATEGORIES = [
+  "Rent", "Utilities", "Materials", "Labour",
+  "Fuel", "Equipment", "Maintenance", "Other",
+] as const;
+
+export type Expense = {
+  id: string;
+  date: string;      // "YYYY-MM-DD"
+  category: string;
+  supplier: string;
+  amount: number;
+  gst: number;
+  note: string;
+  created_at: string;
+};
+
 // Service types for line items (what you bill for).
 export const SERVICE_TYPES = ["PDR", "Tint", "Wrap", "PPF", "Customs", "Detail", "Other"];
 

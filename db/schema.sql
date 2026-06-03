@@ -44,6 +44,22 @@ CREATE TRIGGER jobs_touch BEFORE UPDATE ON jobs
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Expenses: every shop expense logged against the ledger. One row per expense.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS expenses (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner      TEXT NOT NULL DEFAULT 'shop',
+  date       DATE NOT NULL,
+  category   TEXT NOT NULL DEFAULT 'Other',
+  supplier   TEXT NOT NULL DEFAULT '',
+  amount     NUMERIC(12,2) NOT NULL DEFAULT 0,
+  gst        NUMERIC(12,2) NOT NULL DEFAULT 0,
+  note       TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS expenses_owner_idx ON expenses(owner, date DESC);
+
+-- ---------------------------------------------------------------------------
 -- Settings: business identity shown on printed quotes/invoices. One row per shop.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS settings (
