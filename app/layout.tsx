@@ -22,10 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <style>{`
           * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
-          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#0c0d0f; color:#e9ecef; }
+          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827; }
           input:focus,textarea:focus,select:focus { outline:none; border-color:#ff6a2b !important; }
-          button:hover:not(:disabled) { filter:brightness(1.08); }
-          button:active:not(:disabled) { filter:brightness(0.92); }
+          button:hover:not(:disabled) { filter:brightness(0.95); }
+          button:active:not(:disabled) { filter:brightness(0.90); }
           .disp { font-family:'Oswald',sans-serif; }
 
           /* ── Responsive layout shell ── */
@@ -35,14 +35,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             min-height: calc(100vh - 56px);
           }
           .sidebar {
-            border-right: 1px solid #1f2228;
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
             padding: 14px;
             overflow-y: auto;
             height: calc(100vh - 56px);
             position: sticky;
             top: 56px;
           }
-          .main-pane { padding: 22px; }
+          .main-pane { background: #ffffff; padding: 22px; }
 
           /* ── Column helpers ── */
           .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -57,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }
 
           /* ── Mobile bottom nav (hidden on desktop) ── */
-          .mob-nav { display: none; }
+          .mob-nav { display: none; background: #ffffff; border-top: 1px solid #e5e7eb; }
 
           /* ── Print ── */
           @media print {
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               height: auto;
               position: static;
               border-right: none;
+              border-bottom: 1px solid #e5e7eb;
               padding: 12px;
               padding-bottom: 80px;
             }
@@ -108,8 +110,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               position: fixed;
               bottom: 0; left: 0; right: 0;
               z-index: 30;
-              background: #0c0d0f;
-              border-top: 1px solid #1f2228;
+              background: #ffffff;
+              border-top: 1px solid #e5e7eb;
+              box-shadow: 0 -1px 8px rgba(0,0,0,0.06);
               padding-bottom: env(safe-area-inset-bottom, 0);
             }
 

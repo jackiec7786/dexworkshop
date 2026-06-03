@@ -161,7 +161,7 @@ export default function Dashboard() {
           <p style={{ color: tokens.muted, maxWidth: 320, lineHeight: 1.6 }}>
             Check your connection and try again.
           </p>
-          <button style={btn("#ff6a2b", "#0c0d0f")} onClick={load}>Retry</button>
+          <button style={btn("#ff6a2b", "#ffffff")} onClick={load}>Retry</button>
         </div>
       </Center>
     );
@@ -210,7 +210,7 @@ export default function Dashboard() {
         </>}
 
         <button
-          style={{ ...btn("#ff6a2b", "#0c0d0f"),
+          style={{ ...btn("#ff6a2b", "#ffffff"),
             padding: isMobile ? "8px 16px" : "9px 14px",
             fontSize: isMobile ? 20 : 13, lineHeight: 1 }}
           onClick={newJob} aria-label="New job">
@@ -244,8 +244,9 @@ export default function Dashboard() {
             return (
               <div key={j.id} onClick={() => selectJob(j.id)}
                 style={{ padding: "12px 11px", borderRadius: 8, marginBottom: 8, cursor: "pointer",
-                  background: sel ? "#1c1f25" : tokens.surface,
+                  background: sel ? "#fff8f5" : tokens.surface,
                   border: `1px solid ${sel ? tokens.accent : tokens.border}`,
+                  boxShadow: sel ? `0 0 0 1px ${tokens.accent}20` : "0 1px 3px rgba(0,0,0,0.04)",
                   WebkitTapHighlightColor: "transparent", userSelect: "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <span style={{ fontWeight: 600, fontSize: 14, overflow: "hidden",
@@ -281,7 +282,7 @@ export default function Dashboard() {
             <div className="noprint" style={{ color: tokens.faint, display: "grid", placeItems: "center",
               height: "100%", minHeight: 300, textAlign: "center" }}>
               <div>
-                <div className="disp" style={{ fontSize: 28, color: "#2a2e35" }}>NO JOB SELECTED</div>
+                <div className="disp" style={{ fontSize: 28, color: "#d1d5db" }}>NO JOB SELECTED</div>
                 <p style={{ maxWidth: 360, marginTop: 12, lineHeight: 1.6, fontSize: 14 }}>
                   Pick a job from the list or create one. Each job carries one customer and vehicle
                   through inspection, quote and invoice.
@@ -296,7 +297,7 @@ export default function Dashboard() {
                   style={{ display: "flex", gap: 8, marginBottom: 18, alignItems: "center", flexWrap: "wrap" }}>
                   {(["inspection", "quote"] as const).map((t) => (
                     <button key={t} onClick={() => setTab(t)}
-                      style={btn(tab === t ? tokens.accent : "#1c1f25", tab === t ? "#0c0d0f" : tokens.muted)}>
+                      style={btn(tab === t ? tokens.accent : "#f3f4f6", tab === t ? "#ffffff" : "#6b7280")}>
                       {t === "inspection" ? "Inspection" : "Quote / Invoice"}
                     </button>
                   ))}
@@ -309,7 +310,7 @@ export default function Dashboard() {
                   <button style={btn()} onClick={() => { setTab("quote"); setTimeout(() => window.print(), 80); }}>
                     🖨 Print
                   </button>
-                  <button style={btn("#2a1416", "#ff8080")} onClick={() => deleteJob(active.id)}>Delete</button>
+                  <button style={btn("#fef2f2", "#dc2626")} onClick={() => deleteJob(active.id)}>Delete</button>
                 </div>
               )}
 
@@ -322,7 +323,7 @@ export default function Dashboard() {
                     style={{ ...fld, flex: 1, width: "auto" }}>
                     <option>Quote</option><option>Invoice</option><option>Paid</option>
                   </select>
-                  <button style={btn("#2a1416", "#ff8080")} onClick={() => deleteJob(active.id)}>Delete</button>
+                  <button style={btn("#fef2f2", "#dc2626")} onClick={() => deleteJob(active.id)}>Delete</button>
                 </div>
               )}
 
@@ -352,8 +353,8 @@ export default function Dashboard() {
                     <div className="code-strip">
                       {CODE_KEYS.map((code) => (
                         <button key={code} onClick={() => setActiveType(code)} title={DEX_CODES[code]}
-                          style={{ ...btn(activeType === code ? MARK_COLORS[code] : "#1c1f25",
-                            activeType === code ? "#0c0d0f" : "#c5cad1"),
+                          style={{ ...btn(activeType === code ? MARK_COLORS[code] : "#f3f4f6",
+                            activeType === code ? "#ffffff" : "#374151"),
                             padding: "10px 0", fontSize: 12, display: "flex", flexDirection: "column",
                             gap: 3, alignItems: "center", width: "100%", minHeight: 0 }}>
                           <span style={{ fontWeight: 700 }}>{code}</span>
@@ -372,7 +373,7 @@ export default function Dashboard() {
                       scrollbarWidth: "none" }}>
                       {["top", "left", "right", "front"].map((v) => (
                         <button key={v} onClick={() => setView(v)}
-                          style={{ ...btn(view === v ? "#2a2e35" : "#131519"),
+                          style={{ ...btn(view === v ? "#f3f4f6" : "transparent", view === v ? "#111827" : "#6b7280"),
                             whiteSpace: "nowrap", flexShrink: 0, minHeight: 0 }}>
                           {v}
                         </button>
@@ -405,7 +406,7 @@ export default function Dashboard() {
                                     ? { ...x, sqin: e.target.value ? Number(e.target.value) : undefined }
                                     : x) }))}
                                 style={{ ...fld, width: 80, padding: "5px 8px", fontSize: 12, minHeight: 0 }} />
-                              <button style={{ ...btn("#2a1416", "#ff8080"), minHeight: 0 }}
+                              <button style={{ ...btn("#fef2f2", "#dc2626"), minHeight: 0 }}
                                 onClick={() => updateActive((j) => ({
                                   ...j, marks: j.marks.filter((x) => x.id !== m.id) }))}>×</button>
                             </div>
@@ -442,7 +443,7 @@ export default function Dashboard() {
                               onClick={() => updateActive((j) => ({
                                 ...j, photos: j.photos.filter((x) => x.url !== p.url) }))}
                               style={{ position: "absolute", top: 4, right: 4,
-                                background: "rgba(12,13,15,0.85)", color: "#ff8080",
+                                background: "rgba(0,0,0,0.55)", color: "#ffffff",
                                 border: "none", borderRadius: 4, cursor: "pointer",
                                 padding: "2px 7px", fontSize: 14, lineHeight: 1.4, minHeight: 0 }}>×</button>
                           </div>
@@ -474,7 +475,7 @@ export default function Dashboard() {
                                 gap: 8, marginBottom: 8 }}>
                                 <input style={fld} placeholder="Description" value={li.desc}
                                   onChange={(e) => editItem(li.id, "desc", e.target.value)} />
-                                <button style={{ ...btn("#2a1416", "#ff8080"),
+                                <button style={{ ...btn("#fef2f2", "#dc2626"),
                                   alignSelf: "stretch", padding: "0 14px", minHeight: 0 }}
                                   onClick={() => removeItem(li.id)}>×</button>
                               </div>
@@ -521,7 +522,7 @@ export default function Dashboard() {
                                 <td style={{ ...td, color: tokens.muted }}>
                                   {money((li.qty || 0) * (li.price || 0))}
                                 </td>
-                                <td style={td}><button style={btn("#2a1416", "#ff8080")}
+                                <td style={td}><button style={btn("#fef2f2", "#dc2626")}
                                   onClick={() => removeItem(li.id)}>×</button></td>
                               </tr>
                             ))}
@@ -588,8 +589,9 @@ export default function Dashboard() {
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.65)",
             display: "grid", placeItems: "center", zIndex: 50, padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()}
-            style={{ background: "#131519", padding: 24, borderRadius: 12, width: "100%",
-              maxWidth: 460, border: "1px solid #2a2e35", maxHeight: "90vh", overflowY: "auto" }}>
+            style={{ background: "#ffffff", padding: 24, borderRadius: 12, width: "100%",
+              maxWidth: 460, border: "1px solid #e5e7eb", maxHeight: "90vh", overflowY: "auto",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.10)" }}>
             <h3 className="disp" style={{ margin: "0 0 4px", letterSpacing: 1 }}>WORKSHOP SETTINGS</h3>
             {userEmail && (
               <div style={{ fontSize: 12, color: tokens.faint, marginBottom: 16,
@@ -623,7 +625,7 @@ export default function Dashboard() {
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}>
               <button style={btn()} onClick={() => setShowSettings(false)}>Cancel</button>
-              <button style={btn("#ff6a2b", "#0c0d0f")} onClick={saveSettings}>Save</button>
+              <button style={btn("#ff6a2b", "#ffffff")} onClick={saveSettings}>Save</button>
             </div>
           </div>
         </div>
@@ -634,21 +636,22 @@ export default function Dashboard() {
 
 // ── Style atoms ─────────────────────────────────────────────────────────────
 const fld: React.CSSProperties = {
-  background: "#16181c", border: "1px solid #2a2e35", borderRadius: 6, color: "#e9ecef",
+  background: "#f9fafb", border: "1px solid #d1d5db", borderRadius: 6, color: "#111827",
   padding: "9px 11px", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: "inherit",
 };
 const lbl: React.CSSProperties = {
-  fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a818b",
+  fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#6b7280",
   marginBottom: 5, display: "block", fontWeight: 600,
 };
 const hdrStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
-  borderBottom: "1px solid #1f2228", position: "sticky", top: 0,
-  background: "#0c0d0f", zIndex: 10, minHeight: 56,
+  borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0,
+  background: "#ffffff", zIndex: 10, minHeight: 56,
+  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
 };
-const th: React.CSSProperties = { padding: "6px 8px", borderBottom: "1px solid #2a2e35", fontWeight: 600 };
+const th: React.CSSProperties = { padding: "6px 8px", borderBottom: "1px solid #e5e7eb", fontWeight: 600 };
 const td: React.CSSProperties = { padding: "4px 8px", verticalAlign: "top" };
-const btn = (bg = "#2a2e35", fg = "#e9ecef"): React.CSSProperties => ({
+const btn = (bg = "#f3f4f6", fg = "#374151"): React.CSSProperties => ({
   background: bg, color: fg, border: "none", borderRadius: 6,
   padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer",
   fontFamily: "inherit", letterSpacing: 0.3,
@@ -680,7 +683,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Center({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "grid", placeItems: "center", height: "100vh", color: "#7a818b" }}>
+    <div style={{ display: "grid", placeItems: "center", height: "100vh", color: "#9ca3af" }}>
       {children}
     </div>
   );

@@ -79,9 +79,9 @@ export function CarDiagram({
   const vm = marks.filter((m) => m.view === view);
   return (
     <div ref={ref} onClick={click} style={{ position: "relative", cursor: "crosshair",
-      background: "#16181c", border: "1px solid #2a2e35", borderRadius: 8, aspectRatio: "16/9" }}>
+      background: "#f8f9fa", border: "1px solid #e5e7eb", borderRadius: 8, aspectRatio: "16/9" }}>
       <svg viewBox="0 0 320 180" style={{ width: "100%", height: "100%", display: "block" }}>
-        <g fill="none" stroke="#444b54" strokeWidth="2">
+        <g fill="none" stroke="#b0b8c4" strokeWidth="2">
           {view === "top" ? (
             <>
               <rect x="70" y="20" width="180" height="140" rx="34" />
@@ -107,12 +107,12 @@ export function CarDiagram({
         <button key={m.id} title={`${m.type}${m.note ? " — " + m.note : ""} (click to remove)`}
           onClick={(e) => { e.stopPropagation(); onRemove(m.id); }}
           style={{ position: "absolute", left: `${m.x}%`, top: `${m.y}%`, transform: "translate(-50%,-50%)",
-            width: 18, height: 18, borderRadius: "50%", border: "2px solid #0c0d0f",
-            background: MARK_COLORS[m.type] || "#fff", cursor: "pointer", padding: 0,
-            boxShadow: "0 0 0 2px rgba(255,255,255,.15)" }} />
+            width: 18, height: 18, borderRadius: "50%", border: "2px solid #ffffff",
+            background: MARK_COLORS[m.type] || "#9ca3af", cursor: "pointer", padding: 0,
+            boxShadow: "0 1px 4px rgba(0,0,0,.18)" }} />
       ))}
       <span style={{ position: "absolute", bottom: 6, left: 8, fontSize: 10, letterSpacing: 1,
-        textTransform: "uppercase", color: "#5f6671" }}>{view}</span>
+        textTransform: "uppercase", color: "#9ca3af" }}>{view}</span>
     </div>
   );
 }
