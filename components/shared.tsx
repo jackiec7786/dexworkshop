@@ -121,7 +121,6 @@ export function PrintDoc({ job, settings }: { job: Job; settings: Settings }) {
   const money = pkr; // Pakistani format: 8,500/-
   const c = calc(job);
   const isInvoice = job.status !== "Quote";
-  const docNo = job.id.slice(0, 8).toUpperCase();
   const date = new Date(job.created_at).toLocaleDateString("en-GB");
   return (
     <div id="printable" style={{ background: "#fff", color: "#111", borderRadius: 10, padding: 36,

@@ -1,5 +1,21 @@
--- Run in Neon SQL Editor: Dashboard → SQL Editor → New query → Run
+-- DEX Workshop — database schema
+-- Run once in the Neon SQL Editor: Dashboard → SQL Editor → New query → Run.
 
+-- ---------------------------------------------------------------------------
+-- Auth: a single shop owner account (created via the first-run setup screen).
+-- Passwords are bcrypt hashes — never stored in plaintext.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------------------------
+-- Jobs: one row carries a customer + vehicle through inspection → quote → invoice.
+-- JSONB keeps the whole job in a single read/write. `owner` is the shop key.
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS jobs (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner        TEXT NOT NULL,
@@ -27,6 +43,9 @@ DROP TRIGGER IF EXISTS jobs_touch ON jobs;
 CREATE TRIGGER jobs_touch BEFORE UPDATE ON jobs
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
+-- ---------------------------------------------------------------------------
+-- Settings: business identity shown on printed quotes/invoices. One row per shop.
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS settings (
   owner      TEXT PRIMARY KEY,
   biz_name   TEXT DEFAULT 'My Workshop',

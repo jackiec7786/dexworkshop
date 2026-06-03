@@ -1,16 +1,31 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { sql, SHOP_OWNER } from "@/lib/db";
+import { requireSession } from "@/lib/auth";
+import { settingsSchema } from "@/lib/validation";
+
+export const runtime = "nodejs";
 
 export async function GET() {
-  const rows = await sql`SELECT * FROM settings WHERE owner = 'shop'`;
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
+  const rows = await sql`SELECT * FROM settings WHERE owner = ${SHOP_OWNER}`;
   return NextResponse.json(rows[0] ?? null);
 }
 
 export async function PUT(req: Request) {
-  const b = await req.json();
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+
+  const parsed = settingsSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
+  }
+  const b = parsed.data;
+
   const rows = await sql`
     INSERT INTO settings (owner, biz_name, tagline, phone, email, address, currency, tax_rate)
-    VALUES ('shop', ${b.biz_name}, ${b.tagline}, ${b.phone}, ${b.email},
+    VALUES (${SHOP_OWNER}, ${b.biz_name}, ${b.tagline}, ${b.phone}, ${b.email},
             ${b.address}, ${b.currency}, ${b.tax_rate})
     ON CONFLICT (owner) DO UPDATE SET
       biz_name = EXCLUDED.biz_name, tagline = EXCLUDED.tagline,

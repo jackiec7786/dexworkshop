@@ -1,13 +1,20 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Job, Settings, SERVICE_TYPES, MARK_COLORS, DEX_CODES, CODE_KEYS, pkr, calc, CarDiagram, PrintDoc,
 } from "@/components/shared";
+import { Spinner, tokens, useToast, useConfirm } from "@/components/ui";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [email, setEmail] = useState("");
   const [tab, setTab] = useState<"inspection" | "quote">("inspection");
   const [view, setView] = useState("top");
   const [activeType, setActiveType] = useState("DD");
@@ -19,14 +26,28 @@ export default function Dashboard() {
   });
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  useEffect(() => {
-    (async () => {
-      const [r1, r2] = await Promise.all([fetch("/api/jobs"), fetch("/api/settings")]);
-      if (r1.ok) setJobs(await r1.json());
-      if (r2.ok) { const s = await r2.json(); if (s) setSettings(s); }
+  // Send the user back to /login if their session expired mid-session.
+  const onAuthError = useCallback(() => { router.replace("/login"); }, [router]);
+
+  const load = useCallback(async () => {
+    setLoading(true); setLoadError(false);
+    try {
+      const [rJobs, rSettings, rStatus] = await Promise.all([
+        fetch("/api/jobs"), fetch("/api/settings"), fetch("/api/auth/status"),
+      ]);
+      if (rJobs.status === 401) { onAuthError(); return; }
+      if (!rJobs.ok) { setLoadError(true); return; }
+      setJobs(await rJobs.json());
+      if (rSettings.ok) { const s = await rSettings.json(); if (s) setSettings(s); }
+      if (rStatus.ok) { const st = await rStatus.json(); setEmail(st.email ?? ""); }
+    } catch {
+      setLoadError(true);
+    } finally {
       setLoading(false);
-    })();
-  }, []);
+    }
+  }, [onAuthError]);
+
+  useEffect(() => { load(); }, [load]);
 
   const active = jobs.find((j) => j.id === activeId) || null;
   const cur = settings.currency || "Rs";
@@ -34,8 +55,8 @@ export default function Dashboard() {
 
   const saveJob = useCallback((job: Job) => {
     clearTimeout(saveTimers.current[job.id]);
-    saveTimers.current[job.id] = setTimeout(() => {
-      fetch(`/api/jobs/${job.id}`, {
+    saveTimers.current[job.id] = setTimeout(async () => {
+      const res = await fetch(`/api/jobs/${job.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: job.status, customer: job.customer, vehicle: job.vehicle,
@@ -43,8 +64,10 @@ export default function Dashboard() {
           discount: job.discount, tax_rate: job.tax_rate, deposit: job.deposit, photos: job.photos,
         }),
       });
+      if (res.status === 401) onAuthError();
+      else if (!res.ok) toast("Couldn't save changes.", "error");
     }, 600);
-  }, []);
+  }, [onAuthError, toast]);
 
   const updateActive = (mut: (j: Job) => Job) => {
     setJobs((prev) => prev.map((j) => {
@@ -55,25 +78,40 @@ export default function Dashboard() {
 
   const newJob = async () => {
     const res = await fetch("/api/jobs", { method: "POST" });
-    if (!res.ok) return;
+    if (res.status === 401) return onAuthError();
+    if (!res.ok) return toast("Couldn't create job.", "error");
     const j: Job = await res.json();
     setJobs((p) => [j, ...p]); setActiveId(j.id); setTab("inspection"); setView("top");
   };
 
   const deleteJob = async (id: string) => {
-    if (!confirm("Delete this job permanently?")) return;
-    await fetch(`/api/jobs/${id}`, { method: "DELETE" });
+    const ok = await confirm({
+      title: "Delete this job?",
+      message: "This permanently removes the inspection, quote and invoice for this job.",
+      confirmText: "Delete", danger: true,
+    });
+    if (!ok) return;
+    const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" });
+    if (res.status === 401) return onAuthError();
+    if (!res.ok) return toast("Couldn't delete job.", "error");
     setJobs((p) => p.filter((j) => j.id !== id));
     if (activeId === id) setActiveId(null);
+    toast("Job deleted.", "success");
   };
 
   const saveSettings = async () => {
-    await fetch("/api/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings),
+    const res = await fetch("/api/settings", {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings),
     });
+    if (res.status === 401) return onAuthError();
+    if (!res.ok) return toast("Couldn't save settings.", "error");
     setShowSettings(false);
+    toast("Settings saved.", "success");
+  };
+
+  const signOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
   };
 
   const uploadPhoto = async (file: File) => {
@@ -82,12 +120,30 @@ export default function Dashboard() {
     formData.append("file", file);
     formData.append("jobId", active.id);
     const res = await fetch("/api/photos", { method: "POST", body: formData });
-    if (!res.ok) { alert("Upload failed"); return; }
+    if (res.status === 401) return onAuthError();
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return toast(data.error ?? "Upload failed.", "error");
+    }
     const { url } = await res.json();
     updateActive((j) => ({ ...j, photos: [...j.photos, { url, caption: "" }] }));
+    toast("Photo uploaded.", "success");
   };
 
-  if (loading) return <Center>Loading workshop…</Center>;
+  if (loading) return <Center><Spinner label="Loading workshop…" /></Center>;
+  if (loadError) {
+    return (
+      <Center>
+        <div style={{ textAlign: "center", display: "grid", gap: 14 }}>
+          <div className="disp" style={{ fontSize: 22, color: tokens.danger }}>COULDN&apos;T LOAD WORKSHOP</div>
+          <p style={{ color: tokens.muted, maxWidth: 320 }}>
+            The server didn&apos;t respond. Check your connection and try again.
+          </p>
+          <button style={btn("#ff6a2b", "#0c0d0f")} onClick={load}>Retry</button>
+        </div>
+      </Center>
+    );
+  }
 
   const filtered = jobs.filter((j) => {
     const q = search.toLowerCase();
@@ -102,7 +158,9 @@ export default function Dashboard() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/dex-logo.png" alt="DEX" style={{ height: 32, objectFit: "contain" }} />
         <div style={{ flex: 1 }} />
+        {email && <span style={{ fontSize: 12, color: tokens.faint, marginRight: 4 }}>{email}</span>}
         <button style={btn()} onClick={() => setShowSettings(true)}>⚙ Settings</button>
+        <button style={btn()} onClick={signOut}>Sign out</button>
         <button style={btn("#ff6a2b", "#0c0d0f")} onClick={newJob}>+ New Job</button>
       </header>
 
@@ -112,6 +170,11 @@ export default function Dashboard() {
             onChange={(e) => setSearch(e.target.value)} style={{ ...fld, marginBottom: 12 }} />
           <div style={{ fontSize: 11, color: "#7a818b", marginBottom: 8 }}>
             {filtered.length} job{filtered.length !== 1 ? "s" : ""}</div>
+          {jobs.length === 0 && (
+            <div style={{ fontSize: 12, color: tokens.faint, lineHeight: 1.6, padding: "8px 2px" }}>
+              No jobs yet. Hit <b style={{ color: tokens.accent }}>+ New Job</b> to start your first inspection.
+            </div>
+          )}
           {filtered.map((j) => {
             const sel = j.id === activeId;
             const sc = { Quote: "#4fc3ff", Invoice: "#ffd24f", Paid: "#4fd97a" }[j.status];
@@ -179,6 +242,7 @@ export default function Dashboard() {
                     </div>
                     <div style={{ fontSize: 11, color: "#7a818b", marginBottom: 12 }}>
                       Selected: <b style={{ color: MARK_COLORS[activeType] }}>{activeType}</b> — {DEX_CODES[activeType]}
+                      <span style={{ marginLeft: 8, color: tokens.faint }}>· click the diagram to drop a mark</span>
                     </div>
                     <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
                       {["top", "left", "right", "front"].map((v) => (
@@ -186,12 +250,8 @@ export default function Dashboard() {
                     </div>
                     <div style={{ maxWidth: 520 }}>
                       <CarDiagram view={view} marks={active.marks}
-                        onAdd={(p) => {
-                          const sqinStr = prompt(`Sq inch for this ${activeType} (${DEX_CODES[activeType]})? Leave blank if N/A`) || "";
-                          const sqin = sqinStr ? Number(sqinStr) : undefined;
-                          updateActive((j) => ({ ...j, marks: [...j.marks,
-                            { id: "m" + Date.now(), type: activeType, note: "", sqin, ...p }] }));
-                        }}
+                        onAdd={(p) => updateActive((j) => ({ ...j, marks: [...j.marks,
+                          { id: "m" + Date.now(), type: activeType, note: "", ...p }] }))}
                         onRemove={(id) => updateActive((j) => ({ ...j, marks: j.marks.filter((m) => m.id !== id) }))} />
                     </div>
                     {active.marks.length > 0 && (
@@ -201,7 +261,13 @@ export default function Dashboard() {
                             <span style={{ width: 10, height: 10, borderRadius: "50%", background: MARK_COLORS[m.type] }} />
                             <b>{m.type}</b><span style={{ color: "#9aa0a6" }}>{DEX_CODES[m.type] || ""}</span>
                             <span style={{ color: "#7a818b" }}>· {m.view}</span>
-                            {m.sqin ? <span style={{ color: "#ffb86b" }}>· {m.sqin} sq in</span> : null}
+                            <span style={{ flex: 1 }} />
+                            <input type="number" placeholder="sq in" value={m.sqin ?? ""}
+                              onChange={(e) => updateActive((j) => ({ ...j, marks: j.marks.map((x) =>
+                                x.id === m.id ? { ...x, sqin: e.target.value ? Number(e.target.value) : undefined } : x) }))}
+                              style={{ ...fld, width: 90, padding: "5px 8px", fontSize: 12 }} />
+                            <button style={btn("#2a1416", "#ff8080")}
+                              onClick={() => updateActive((j) => ({ ...j, marks: j.marks.filter((x) => x.id !== m.id) }))}>×</button>
                           </li>))}
                       </ul>
                     )}
@@ -257,7 +323,7 @@ export default function Dashboard() {
                         </tbody>
                       </table>
                       <button style={{ ...btn(), marginTop: 10 }} onClick={() => updateActive((j) => ({ ...j,
-                        line_items: [...j.line_items, { id: "li" + Date.now(), desc: "", type: "Dent Repair", qty: 1, price: 0 }] }))}>
+                        line_items: [...j.line_items, { id: "li" + Date.now(), desc: "", type: "PDR", qty: 1, price: 0 }] }))}>
                         + Add line</button>
                     </Section>
                     <Section title="Adjustments"><div style={grid3}>
