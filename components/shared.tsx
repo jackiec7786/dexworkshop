@@ -38,6 +38,17 @@ export type Settings = {
   address: string; currency: string; tax_rate: number;
 };
 
+export const CUSTOMER_TAGS = ["VIP", "Regular", "Fleet", "Wholesale", "Referred", "Blocked"] as const;
+
+export type CustomerRecord = {
+  id: string;
+  phone: string;  // normalized digits — the join key
+  notes: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+};
+
 export const EXPENSE_CATEGORIES = [
   "Rent", "Utilities", "Materials", "Labour",
   "Fuel", "Equipment", "Maintenance", "Other",

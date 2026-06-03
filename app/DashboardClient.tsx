@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Job, Settings, Expense, EXPENSE_CATEGORIES,
+  CustomerRecord, CUSTOMER_TAGS,
   SERVICE_TYPES, MARK_COLORS, DEX_CODES, CODE_KEYS, pkr, calc, CarDiagram, PrintDoc,
 } from "@/components/shared";
 import { Spinner, tokens, useToast, useConfirm } from "@/components/ui";
@@ -45,6 +46,10 @@ export default function Dashboard() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showPipeline, setShowPipeline] = useState(false);
 
+  // ─── CRM state ───────────────────────────────────────────────────────────
+  const [showCustomers, setShowCustomers] = useState(false);
+  const [customerRecords, setCustomerRecords] = useState<CustomerRecord[]>([]);
+
   // ─── Accounting state ─────────────────────────────────────────────────────
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showAccounting, setShowAccounting] = useState(false);
@@ -70,9 +75,10 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     setLoading(true); setLoadError(false);
     try {
-      const [rJobs, rSettings, rStatus, rExp] = await Promise.all([
+      const [rJobs, rSettings, rStatus, rExp, rCust] = await Promise.all([
         fetch("/api/jobs"), fetch("/api/settings"),
         fetch("/api/auth/status"), fetch("/api/expenses"),
+        fetch("/api/customers"),
       ]);
       if (rJobs.status === 401) { onAuthError(); return; }
       if (!rJobs.ok) { setLoadError(true); return; }
@@ -80,6 +86,7 @@ export default function Dashboard() {
       if (rSettings.ok) { const s = await rSettings.json(); if (s) setSettings(s); }
       if (rStatus.ok) { const st = await rStatus.json(); setUserEmail(st.email ?? ""); }
       if (rExp.ok) setExpenses(await rExp.json());
+      if (rCust.ok) setCustomerRecords(await rCust.json());
     } catch { setLoadError(true); }
     finally { setLoading(false); }
   }, [onAuthError]);
@@ -117,7 +124,22 @@ export default function Dashboard() {
 
   const selectJob = (id: string) => {
     setActiveId(id); setTab("inspection");
-    setShowAccounting(false); setShowCalendar(false); setShowPipeline(false);
+    setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false);
+  };
+
+  const newJobForCustomer = async (name: string, phone: string, email: string) => {
+    const res = await fetch("/api/jobs", { method: "POST" });
+    if (res.status === 401) return onAuthError();
+    if (!res.ok) return toast("Couldn't create job.", "error");
+    const j: Job = await res.json();
+    // Pre-fill customer info on the new job
+    const patch = await fetch(`/api/jobs/${j.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer: { name, phone, email } }),
+    });
+    const filled: Job = patch.ok ? await patch.json() : j;
+    setJobs((p) => [filled, ...p]);
+    selectJob(filled.id);
   };
 
   const newJob = async () => {
@@ -265,16 +287,16 @@ export default function Dashboard() {
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
             onClick={() => setActiveId(null)} aria-label="Back to jobs list">←</button>
         )}
-        {isMobile && (showAccounting || showCalendar || showPipeline) && (
+        {isMobile && (showAccounting || showCalendar || showPipeline || showCustomers) && (
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 13, minHeight: 40 }}
-            onClick={() => { setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); }}>← Jobs</button>
+            onClick={() => { setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); }}>← Jobs</button>
         )}
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
 
         {/* Mobile breadcrumb: active job customer name */}
-        {isMobile && active && !showAccounting && !showCalendar && !showPipeline && (
+        {isMobile && active && !showAccounting && !showCalendar && !showPipeline && !showCustomers && (
           <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
             textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
             {active.customer.name
@@ -288,41 +310,60 @@ export default function Dashboard() {
         {/* Desktop controls */}
         {!isMobile && <>
           {userEmail && <span style={{ fontSize: 12, color: tokens.faint }}>{userEmail}</span>}
-          <button style={btn(showCalendar ? tokens.accent : undefined, showCalendar ? "#fff" : undefined)}
-            onClick={() => { setShowCalendar(!showCalendar); setShowAccounting(false); setShowPipeline(false); setActiveId(null); }}>
-            📅 Calendar
-          </button>
-          <button style={btn(showPipeline ? tokens.accent : undefined, showPipeline ? "#fff" : undefined)}
-            onClick={() => { setShowPipeline(!showPipeline); setShowAccounting(false); setShowCalendar(false); setActiveId(null); }}>
-            ⋮⋮ Pipeline
-          </button>
-          <button style={btn(showAccounting ? tokens.accent : undefined, showAccounting ? "#fff" : undefined)}
-            onClick={() => { setShowAccounting(!showAccounting); setShowCalendar(false); setShowPipeline(false); setActiveId(null); }}>
-            ₨ Accounting
-          </button>
+          {(["Calendar","Pipeline","Customers","Accounting"] as const).map((label) => {
+            const active = label === "Calendar" ? showCalendar
+              : label === "Pipeline" ? showPipeline
+              : label === "Customers" ? showCustomers
+              : showAccounting;
+            const icon = label === "Calendar" ? "📅 " : label === "Pipeline" ? "⋮⋮ "
+              : label === "Customers" ? "👥 " : "₨ ";
+            return (
+              <button key={label}
+                style={btn(active ? tokens.accent : undefined, active ? "#fff" : undefined)}
+                onClick={() => {
+                  const next = !active;
+                  setShowCalendar(label === "Calendar" ? next : false);
+                  setShowPipeline(label === "Pipeline" ? next : false);
+                  setShowCustomers(label === "Customers" ? next : false);
+                  setShowAccounting(label === "Accounting" ? next : false);
+                  if (next) setActiveId(null);
+                }}>
+                {icon}{label}
+              </button>
+            );
+          })}
           <button style={btn()} onClick={() => setShowSettings(true)}>⚙ Settings</button>
           <button style={btn()} onClick={signOut}>Sign out</button>
         </>}
 
         {/* Mobile: view icons always visible */}
         {isMobile && <>
-          <button style={{ ...btn(showCalendar ? tokens.accent : undefined, showCalendar ? "#fff" : undefined),
-            padding: "8px 10px", fontSize: 15, minHeight: 40 }}
-            onClick={() => { setShowCalendar(!showCalendar); setShowAccounting(false); setShowPipeline(false); setActiveId(null); }}
-            aria-label="Calendar">📅</button>
-          <button style={{ ...btn(showPipeline ? tokens.accent : undefined, showPipeline ? "#fff" : undefined),
-            padding: "8px 10px", fontSize: 15, minHeight: 40 }}
-            onClick={() => { setShowPipeline(!showPipeline); setShowAccounting(false); setShowCalendar(false); setActiveId(null); }}
-            aria-label="Pipeline">⋮⋮</button>
-          <button style={{ ...btn(showAccounting ? tokens.accent : undefined, showAccounting ? "#fff" : undefined),
-            padding: "8px 10px", fontSize: 15, minHeight: 40 }}
-            onClick={() => { setShowAccounting(!showAccounting); setShowCalendar(false); setShowPipeline(false); setActiveId(null); }}
-            aria-label="Accounting">₨</button>
+          {([
+            { key: "Calendar", icon: "📅", active: showCalendar },
+            { key: "Pipeline", icon: "⋮⋮", active: showPipeline },
+            { key: "Customers", icon: "👥", active: showCustomers },
+            { key: "Accounting", icon: "₨", active: showAccounting },
+          ] as const).map(({ key, icon, active }) => (
+            <button key={key}
+              style={{ ...btn(active ? tokens.accent : undefined, active ? "#fff" : undefined),
+                padding: "8px 10px", fontSize: 15, minHeight: 40 }}
+              aria-label={key}
+              onClick={() => {
+                const next = !active;
+                setShowCalendar(key === "Calendar" ? next : false);
+                setShowPipeline(key === "Pipeline" ? next : false);
+                setShowCustomers(key === "Customers" ? next : false);
+                setShowAccounting(key === "Accounting" ? next : false);
+                if (next) setActiveId(null);
+              }}>
+              {icon}
+            </button>
+          ))}
           <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
             onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
         </>}
 
-        {!showAccounting && !showCalendar && !showPipeline && (
+        {!showAccounting && !showCalendar && !showPipeline && !showCustomers && (
           <button
             style={{ ...btn("#ff6a2b", "#ffffff"),
               padding: isMobile ? "8px 16px" : "9px 14px",
@@ -343,6 +384,15 @@ export default function Dashboard() {
         <PipelineSection isMobile={isMobile} jobs={jobs} onSelectJob={selectJob} onNewJob={newJob} />
       )}
 
+      {/* ─── Customers section ─── */}
+      {showCustomers && (
+        <CustomersSection
+          isMobile={isMobile} jobs={jobs} customerRecords={customerRecords}
+          setCustomerRecords={setCustomerRecords}
+          onSelectJob={selectJob} onNewJobForCustomer={newJobForCustomer}
+        />
+      )}
+
       {/* ─── Accounting section (full width) ─── */}
       {showAccounting && (
         <AccountingSection
@@ -354,7 +404,7 @@ export default function Dashboard() {
       )}
 
       {/* ─── App shell: only when not in a full-screen section ─── */}
-      {!showAccounting && !showCalendar && !showPipeline && (
+      {!showAccounting && !showCalendar && !showPipeline && !showCustomers && (
         <div className="app-shell" data-panel={activeId ? "detail" : "list"}>
 
           {/* ── Job list sidebar ── */}
@@ -704,7 +754,7 @@ export default function Dashboard() {
       )}
 
       {/* ─── Mobile bottom nav (job detail only, not in full-screen sections) ─── */}
-      {activeId && !showAccounting && !showCalendar && !showPipeline && (
+      {activeId && !showAccounting && !showCalendar && !showPipeline && !showCustomers && (
         <nav className="mob-nav noprint">
           {[
             { label: "Jobs", icon: "←", onClick: () => setActiveId(null), isActive: false },
@@ -1485,6 +1535,411 @@ function CalendarSection({ isMobile, jobs, onSelectJob }: {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Customers / CRM section ───────────────────────────────────────────────────
+
+/** Normalize a phone string to digits-only for matching. */
+function normPhone(p: string) { return (p || "").replace(/\D/g, ""); }
+
+type DerivedCustomer = {
+  key: string;       // normPhone or fallback to lower name
+  name: string;
+  phone: string;
+  email: string;
+  jobs: Job[];
+  totalRevenue: number;
+  lastVisitDate: string;
+  vehicles: string[];
+  record: CustomerRecord | null;
+};
+
+function deriveCustomers(jobs: Job[], records: CustomerRecord[]): DerivedCustomer[] {
+  const recByPhone = new Map(records.map((r) => [r.phone, r]));
+  const map = new Map<string, DerivedCustomer>();
+
+  for (const j of jobs) {
+    const phone = normPhone(j.customer.phone || "");
+    const name = (j.customer.name || "").trim();
+    const key = phone || name.toLowerCase() || "unknown";
+
+    if (!map.has(key)) {
+      map.set(key, {
+        key, name, phone,
+        email: j.customer.email || "",
+        jobs: [], totalRevenue: 0,
+        lastVisitDate: j.created_at,
+        vehicles: [],
+        record: recByPhone.get(phone) ?? null,
+      });
+    }
+    const c = map.get(key)!;
+    c.jobs.push(j);
+    if (j.status === "Paid") c.totalRevenue += calc(j).total;
+    if (j.created_at > c.lastVisitDate) {
+      c.lastVisitDate = j.created_at;
+      if (j.customer.name) c.name = j.customer.name;
+      if (j.customer.phone) c.phone = j.customer.phone;
+      if (j.customer.email) c.email = j.customer.email;
+    }
+    const veh = [j.vehicle.year, j.vehicle.make, j.vehicle.model].filter(Boolean).join(" ");
+    const plate = j.vehicle.plate;
+    if (veh && !c.vehicles.includes(veh)) c.vehicles.push(veh);
+    if (plate && !c.vehicles.includes(plate)) c.vehicles.unshift(plate);
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.lastVisitDate.localeCompare(a.lastVisitDate));
+}
+
+const TAG_COLORS: Record<string, string> = {
+  VIP: "#d97706", Regular: tokens.info, Fleet: "#0891b2",
+  Wholesale: "#7c3aed", Referred: tokens.success, Blocked: tokens.danger,
+};
+
+function CustomersSection({ isMobile, jobs, customerRecords, setCustomerRecords, onSelectJob, onNewJobForCustomer }: {
+  isMobile: boolean;
+  jobs: Job[];
+  customerRecords: CustomerRecord[];
+  setCustomerRecords: React.Dispatch<React.SetStateAction<CustomerRecord[]>>;
+  onSelectJob: (id: string) => void;
+  onNewJobForCustomer: (name: string, phone: string, email: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [tagsDraft, setTagsDraft] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  const all = deriveCustomers(jobs, customerRecords);
+
+  const filtered = search.trim()
+    ? all.filter((c) => {
+        const q = search.toLowerCase();
+        return c.name.toLowerCase().includes(q) ||
+          c.phone.includes(q) ||
+          c.vehicles.some((v) => v.toLowerCase().includes(q));
+      })
+    : all;
+
+  const selected = selectedKey ? all.find((c) => c.key === selectedKey) ?? null : null;
+
+  const openCustomer = (c: DerivedCustomer) => {
+    setSelectedKey(c.key);
+    setNotesDraft(c.record?.notes ?? "");
+    setTagsDraft(c.record?.tags ?? []);
+  };
+
+  const saveNotes = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      const phone = normPhone(selected.phone);
+      if (selected.record) {
+        const res = await fetch(`/api/customers/${selected.record.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: notesDraft, tags: tagsDraft }),
+        });
+        if (!res.ok) return;
+        const updated: CustomerRecord = await res.json();
+        setCustomerRecords((p) => p.map((r) => r.id === updated.id ? updated : r));
+      } else {
+        const res = await fetch("/api/customers", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, notes: notesDraft, tags: tagsDraft }),
+        });
+        if (!res.ok) return;
+        const created: CustomerRecord = await res.json();
+        setCustomerRecords((p) => [...p, created]);
+      }
+    } finally { setSaving(false); }
+  };
+
+  const toggleTag = (tag: string) =>
+    setTagsDraft((p) => p.includes(tag) ? p.filter((t) => t !== tag) : [...p, tag]);
+
+  const statusColor: Record<string, string> = {
+    Quote: tokens.info, Invoice: tokens.warn, Paid: tokens.success,
+  };
+
+  // Mobile: show detail panel when a customer is selected
+  if (isMobile && selected) {
+    return (
+      <div style={{ padding: "16px 12px 80px" }}>
+        <button style={{ ...btn(), marginBottom: 16 }} onClick={() => setSelectedKey(null)}>← Customers</button>
+        <CustomerDetail selected={selected} notesDraft={notesDraft} setNotesDraft={setNotesDraft}
+          tagsDraft={tagsDraft} toggleTag={toggleTag} saving={saving} onSave={saveNotes}
+          onSelectJob={onSelectJob} onNewJobForCustomer={onNewJobForCustomer}
+          statusColor={statusColor} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: isMobile ? "16px 12px 80px" : "24px 24px 48px",
+      maxWidth: 1100, margin: "0 auto" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <div className="disp" style={{ fontSize: 20, letterSpacing: 1.5 }}>CUSTOMERS</div>
+        <span style={{ fontSize: 13, color: tokens.faint }}>{all.length} total</span>
+        <div style={{ flex: 1 }} />
+        <input placeholder="Search name, phone, plate…" value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ ...fld, width: isMobile ? "100%" : 260 }} />
+      </div>
+
+      <div style={{ display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : selectedKey ? "340px 1fr" : "1fr",
+        gap: 16, alignItems: "start" }}>
+
+        {/* ── Customer list ── */}
+        <div style={{ display: "grid", gap: 8 }}>
+          {filtered.length === 0 && (
+            <div style={{ padding: "32px 16px", textAlign: "center", color: tokens.faint,
+              background: tokens.surface, border: `1px solid ${tokens.border}`, borderRadius: 10 }}>
+              {search ? "No customers match that search." : "No customers yet — jobs will appear here."}
+            </div>
+          )}
+          {filtered.map((c) => {
+            const isSelected = c.key === selectedKey;
+            const avgJob = c.jobs.length ? c.totalRevenue / c.jobs.filter((j) => j.status === "Paid").length || 0 : 0;
+            return (
+              <div key={c.key} onClick={() => openCustomer(c)}
+                style={{ background: isSelected ? "#fff8f5" : tokens.surface,
+                  border: `1px solid ${isSelected ? tokens.accent : tokens.border}`,
+                  borderRadius: 10, padding: "14px 16px", cursor: "pointer",
+                  boxShadow: isSelected ? `0 0 0 1px ${tokens.accent}20` : "0 1px 3px rgba(0,0,0,.04)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between",
+                  alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden",
+                      textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {c.name || "Unnamed"}
+                    </div>
+                    {c.phone && (
+                      <div style={{ fontSize: 12, color: tokens.muted, marginTop: 2 }}>{c.phone}</div>
+                    )}
+                    {c.vehicles.length > 0 && (
+                      <div style={{ fontSize: 11, color: tokens.faint, marginTop: 3,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c.vehicles.slice(0, 3).join(" · ")}
+                      </div>
+                    )}
+                    {/* Tags */}
+                    {(c.record?.tags ?? []).length > 0 && (
+                      <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
+                        {(c.record!.tags).map((t) => (
+                          <span key={t} style={{ fontSize: 10, fontWeight: 700,
+                            color: TAG_COLORS[t] || tokens.muted,
+                            border: `1px solid ${TAG_COLORS[t] || tokens.muted}`,
+                            borderRadius: 4, padding: "1px 6px" }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontWeight: 700, color: tokens.accent, fontSize: 14 }}>
+                      {pkr(c.totalRevenue)}
+                    </div>
+                    <div style={{ fontSize: 11, color: tokens.faint, marginTop: 2 }}>
+                      {c.jobs.length} job{c.jobs.length !== 1 ? "s" : ""}
+                    </div>
+                    {avgJob > 0 && (
+                      <div style={{ fontSize: 11, color: tokens.muted, marginTop: 1 }}>
+                        avg {pkr(avgJob)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 10, color: tokens.faint, marginTop: 4 }}>
+                      {new Date(c.lastVisitDate).toLocaleDateString("en-GB",
+                        { day: "numeric", month: "short", year: "numeric" })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Customer detail (desktop) ── */}
+        {!isMobile && selected && (
+          <CustomerDetail selected={selected} notesDraft={notesDraft} setNotesDraft={setNotesDraft}
+            tagsDraft={tagsDraft} toggleTag={toggleTag} saving={saving} onSave={saveNotes}
+            onSelectJob={onSelectJob} onNewJobForCustomer={onNewJobForCustomer}
+            statusColor={statusColor} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggleTag,
+  saving, onSave, onSelectJob, onNewJobForCustomer, statusColor }: {
+  selected: DerivedCustomer;
+  notesDraft: string;
+  setNotesDraft: (v: string) => void;
+  tagsDraft: string[];
+  toggleTag: (t: string) => void;
+  saving: boolean;
+  onSave: () => void;
+  onSelectJob: (id: string) => void;
+  onNewJobForCustomer: (name: string, phone: string, email: string) => void;
+  statusColor: Record<string, string>;
+}) {
+  const paid = selected.jobs.filter((j) => j.status === "Paid");
+  const pending = selected.jobs.filter((j) => j.status !== "Paid");
+  const lastJob = selected.jobs.reduce((a, b) =>
+    a.created_at > b.created_at ? a : b, selected.jobs[0]);
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      {/* Profile card */}
+      <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+        borderRadius: 10, padding: "18px 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between",
+          alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+          <div>
+            <div className="disp" style={{ fontSize: 18, letterSpacing: 1 }}>
+              {selected.name || "Unnamed"}
+            </div>
+            {selected.phone && (
+              <div style={{ fontSize: 13, color: tokens.muted, marginTop: 3 }}>📱 {selected.phone}</div>
+            )}
+            {selected.email && (
+              <div style={{ fontSize: 13, color: tokens.muted, marginTop: 2 }}>✉ {selected.email}</div>
+            )}
+          </div>
+          <button style={{ ...btn("#ff6a2b", "#ffffff"), padding: "8px 16px" }}
+            onClick={() => onNewJobForCustomer(selected.name, selected.phone, selected.email)}>
+            + New Job
+          </button>
+        </div>
+
+        {/* Quick stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          {[
+            { label: "Total Revenue", value: pkr(selected.totalRevenue), color: tokens.success },
+            { label: "Jobs", value: String(selected.jobs.length), color: tokens.text },
+            { label: "Last Visit", value: lastJob
+              ? new Date(lastJob.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+              : "—", color: tokens.muted },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background: tokens.surfaceAlt,
+              borderRadius: 8, padding: "10px 12px" }}>
+              <div style={{ fontSize: 10, color: tokens.faint, letterSpacing: 1,
+                textTransform: "uppercase", fontWeight: 600, marginBottom: 4 }}>{label}</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Vehicles */}
+        {selected.vehicles.length > 0 && (
+          <div style={{ marginTop: 12, fontSize: 12, color: tokens.muted }}>
+            <span style={{ fontWeight: 600, color: tokens.faint }}>Vehicles: </span>
+            {selected.vehicles.join(" · ")}
+          </div>
+        )}
+      </div>
+
+      {/* Tags */}
+      <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+        borderRadius: 10, padding: "14px 16px" }}>
+        <div style={{ fontSize: 10, color: tokens.faint, letterSpacing: 1.2,
+          textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>Tags</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {CUSTOMER_TAGS.map((tag) => {
+            const on = tagsDraft.includes(tag);
+            const col = TAG_COLORS[tag] || tokens.muted;
+            return (
+              <button key={tag} onClick={() => toggleTag(tag)}
+                style={{ ...btn(on ? col : tokens.surfaceAlt, on ? "#fff" : col),
+                  padding: "5px 12px", fontSize: 12, fontWeight: 700,
+                  border: `1px solid ${col}`, borderRadius: 20 }}>
+                {tag}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+        borderRadius: 10, padding: "14px 16px" }}>
+        <div style={{ fontSize: 10, color: tokens.faint, letterSpacing: 1.2,
+          textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Notes</div>
+        {!selected.phone && (
+          <div style={{ fontSize: 12, color: tokens.warn, marginBottom: 8 }}>
+            Add a phone number to this customer&apos;s job to enable saving notes.
+          </div>
+        )}
+        <textarea rows={4} style={{ ...fld, resize: "vertical", minHeight: 80 }}
+          value={notesDraft} placeholder="Car preferences, special instructions, VIP perks…"
+          onChange={(e) => setNotesDraft(e.target.value)} />
+        <button style={{ ...btn("#ff6a2b", "#ffffff"), marginTop: 8, opacity: saving ? 0.7 : 1 }}
+          disabled={saving || !selected.phone} onClick={onSave}>
+          {saving ? "Saving…" : "Save Notes & Tags"}
+        </button>
+      </div>
+
+      {/* Job history */}
+      <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+        borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}` }}>
+          <span className="disp" style={{ fontSize: 11, letterSpacing: 2, color: tokens.accent }}>
+            JOB HISTORY — {selected.jobs.length}
+          </span>
+        </div>
+        {[...selected.jobs].sort((a, b) => b.created_at.localeCompare(a.created_at)).map((j) => {
+          const c = calc(j);
+          const sc = statusColor[j.status] || tokens.muted;
+          return (
+            <div key={j.id} onClick={() => onSelectJob(j.id)}
+              style={{ padding: "11px 16px", borderBottom: `1px solid ${tokens.border}`,
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: tokens.muted,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {[j.vehicle.year, j.vehicle.make, j.vehicle.model].filter(Boolean).join(" ") || "No vehicle"}
+                  {j.vehicle.plate ? ` · ${j.vehicle.plate}` : ""}
+                </div>
+                <div style={{ fontSize: 11, color: tokens.faint, marginTop: 2 }}>
+                  {new Date(j.created_at).toLocaleDateString("en-GB",
+                    { day: "numeric", month: "short", year: "numeric" })}
+                  {j.scheduled_date && ` · Booked ${new Date(j.scheduled_date + "T00:00:00")
+                    .toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 10, color: sc, border: `1px solid ${sc}`,
+                  borderRadius: 4, padding: "2px 7px", marginBottom: 4 }}>{j.status}</div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: tokens.accent }}>{pkr(c.total)}</div>
+              </div>
+            </div>
+          );
+        })}
+        {selected.jobs.length === 0 && (
+          <div style={{ padding: "24px 16px", textAlign: "center", color: tokens.faint, fontSize: 13 }}>
+            No jobs yet.
+          </div>
+        )}
+        {/* Mini P&L */}
+        {paid.length > 0 && (
+          <div style={{ padding: "10px 16px", background: tokens.surfaceAlt,
+            borderTop: `1px solid ${tokens.border}`, fontSize: 12,
+            display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <span style={{ color: tokens.faint }}>
+              {paid.length} paid · {pending.length} open
+            </span>
+            <span style={{ fontWeight: 700, color: tokens.success }}>
+              {pkr(selected.totalRevenue)} revenue
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

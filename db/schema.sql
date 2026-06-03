@@ -49,6 +49,24 @@ CREATE TRIGGER jobs_touch BEFORE UPDATE ON jobs
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Customers: augmentation store for notes & tags; join to jobs via phone.
+-- Phone is stored as digits-only (e.g. "923214432687"). A partial unique
+-- index prevents duplicate records for the same phone, while still allowing
+-- rows with no phone on file.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS customers (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner      TEXT NOT NULL DEFAULT 'shop',
+  phone      TEXT NOT NULL DEFAULT '',
+  notes      TEXT NOT NULL DEFAULT '',
+  tags       JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS customers_owner_phone_idx
+  ON customers(owner, phone) WHERE phone != '';
+
+-- ---------------------------------------------------------------------------
 -- Expenses: every shop expense logged against the ledger. One row per expense.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS expenses (
