@@ -80,19 +80,16 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     setLoading(true); setLoadError(false);
     try {
-      const [rJobs, rSettings, rStatus, rExp, rCust, rInv] = await Promise.all([
-        fetch("/api/jobs"), fetch("/api/settings"),
-        fetch("/api/auth/status"), fetch("/api/expenses"),
-        fetch("/api/customers"), fetch("/api/inventory"),
-      ]);
-      if (rJobs.status === 401) { onAuthError(); return; }
-      if (!rJobs.ok) { setLoadError(true); return; }
-      setJobs(await rJobs.json());
-      if (rSettings.ok) { const s = await rSettings.json(); if (s) setSettings(s); }
-      if (rStatus.ok) { const st = await rStatus.json(); setUserEmail(st.email ?? ""); }
-      if (rExp.ok) setExpenses(await rExp.json());
-      if (rCust.ok) setCustomerRecords(await rCust.json());
-      if (rInv.ok) setInventory(await rInv.json());
+      const res = await fetch("/api/bootstrap");
+      if (res.status === 401) { onAuthError(); return; }
+      if (!res.ok) { setLoadError(true); return; }
+      const data = await res.json();
+      setJobs(data.jobs ?? []);
+      if (data.settings) setSettings(data.settings);
+      setUserEmail(data.email ?? "");
+      setExpenses(data.expenses ?? []);
+      setCustomerRecords(data.customers ?? []);
+      setInventory(data.inventory ?? []);
     } catch { setLoadError(true); }
     finally { setLoading(false); }
   }, [onAuthError]);
@@ -100,6 +97,7 @@ export default function Dashboard() {
   useEffect(() => { load(); }, [load]);
 
   const active = jobs.find((j) => j.id === activeId) || null;
+  const anySection = showCalendar || showPipeline || showCustomers || showInventory || showAccounting;
   const money = pkr;
   const cur = settings.currency || "Rs";
 
@@ -163,6 +161,8 @@ export default function Dashboard() {
       confirmText: "Delete", danger: true,
     });
     if (!ok) return;
+    clearTimeout(saveTimers.current[id]);
+    delete saveTimers.current[id];
     const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" });
     if (res.status === 401) return onAuthError();
     if (!res.ok) return toast("Couldn't delete job.", "error");
@@ -296,21 +296,17 @@ export default function Dashboard() {
 
       {/* ─── Header ─── */}
       <header className="noprint" style={hdrStyle}>
-        {/* Back arrow: mobile only, when a job is open and not in accounting */}
-        {isMobile && activeId && !showAccounting && (
+        {/* Back arrow: desktop only, when a job is open */}
+        {!isMobile && activeId && (
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
             onClick={() => setActiveId(null)} aria-label="Back to jobs list">←</button>
-        )}
-        {isMobile && (showAccounting || showCalendar || showPipeline || showCustomers || showInventory) && (
-          <button style={{ ...btn(), padding: "8px 12px", fontSize: 13, minHeight: 40 }}
-            onClick={() => { setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); }}>← Jobs</button>
         )}
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
 
         {/* Mobile breadcrumb: active job customer name */}
-        {isMobile && active && !showAccounting && !showCalendar && !showPipeline && !showCustomers && !showInventory && (
+        {isMobile && active && !anySection && (
           <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
             textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
             {active.customer.name
@@ -324,7 +320,7 @@ export default function Dashboard() {
         {/* Desktop controls */}
         {!isMobile && <>
           {userEmail && <span style={{ fontSize: 12, color: tokens.faint }}>{userEmail}</span>}
-          {(["Calendar","Pipeline","Customers","Inventory","Accounting"] as const).map((label) => {
+          {(["Calendar","Pipeline","Customers","Inventory","Finance"] as const).map((label) => {
             const isActive = label === "Calendar" ? showCalendar
               : label === "Pipeline" ? showPipeline
               : label === "Customers" ? showCustomers
@@ -343,7 +339,7 @@ export default function Dashboard() {
                   setShowPipeline(label === "Pipeline" ? next : false);
                   setShowCustomers(label === "Customers" ? next : false);
                   setShowInventory(label === "Inventory" ? next : false);
-                  setShowAccounting(label === "Accounting" ? next : false);
+                  setShowAccounting(label === "Finance" ? next : false);
                   if (next) setActiveId(null);
                 }}>
                 {icon}{label}{lowStock > 0 && <span style={{ marginLeft: 5, background: tokens.danger,
@@ -355,41 +351,13 @@ export default function Dashboard() {
           <button style={btn()} onClick={signOut}>Sign out</button>
         </>}
 
-        {/* Mobile: view icons always visible */}
-        {isMobile && <>
-          {([
-            { key: "Calendar",   icon: "📅", isActive: showCalendar },
-            { key: "Pipeline",   icon: "⋮⋮", isActive: showPipeline },
-            { key: "Customers",  icon: "👥", isActive: showCustomers },
-            { key: "Inventory",  icon: "📦", isActive: showInventory },
-            { key: "Accounting", icon: "₨",  isActive: showAccounting },
-          ] as const).map(({ key, icon, isActive }) => (
-            <button key={key}
-              style={{ ...btn(isActive ? tokens.accent : undefined, isActive ? "#fff" : undefined),
-                padding: "8px 10px", fontSize: 15, minHeight: 40, position: "relative" }}
-              aria-label={key}
-              onClick={() => {
-                const next = !isActive;
-                setShowCalendar(key === "Calendar" ? next : false);
-                setShowPipeline(key === "Pipeline" ? next : false);
-                setShowCustomers(key === "Customers" ? next : false);
-                setShowInventory(key === "Inventory" ? next : false);
-                setShowAccounting(key === "Accounting" ? next : false);
-                if (next) setActiveId(null);
-              }}>
-              {icon}
-              {key === "Inventory" && inventory.filter(
-                (i) => i.stock <= i.reorder_at && i.reorder_at > 0).length > 0 && (
-                <span style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7,
-                  background: tokens.danger, borderRadius: "50%" }} />
-              )}
-            </button>
-          ))}
+        {/* Mobile: settings icon only (section nav is in bottom tab bar) */}
+        {isMobile && (
           <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
             onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
-        </>}
+        )}
 
-        {!showAccounting && !showCalendar && !showPipeline && !showCustomers && !showInventory && (
+        {!anySection && (
           <button
             style={{ ...btn("#ff6a2b", "#ffffff"),
               padding: isMobile ? "8px 16px" : "9px 14px",
@@ -435,7 +403,7 @@ export default function Dashboard() {
       )}
 
       {/* ─── App shell: only when not in a full-screen section ─── */}
-      {!showAccounting && !showCalendar && !showPipeline && !showCustomers && (
+      {!anySection && (
         <div className="app-shell" data-panel={activeId ? "detail" : "list"}>
 
           {/* ── Job list sidebar ── */}
@@ -488,6 +456,14 @@ export default function Dashboard() {
                     </span>
                     <span style={{ color: tokens.accent, fontWeight: 600 }}>{money(totals.total)}</span>
                   </div>
+                  {j.scheduled_date && (
+                    <div style={{ marginTop: 5, fontSize: 11, color: tokens.info,
+                      display: "flex", alignItems: "center", gap: 3 }}>
+                      <span>📅</span>
+                      <span>{new Date(j.scheduled_date + "T00:00:00").toLocaleDateString("en-GB",
+                        { day: "numeric", month: "short" })}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -791,10 +767,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ─── Mobile bottom nav (job detail only, not in full-screen sections) ─── */}
-      {activeId && !showAccounting && !showCalendar && !showPipeline && !showCustomers && !showInventory && (
-        <nav className="mob-nav noprint">
-          {[
+      {/* ─── Mobile bottom nav: always visible, content changes by context ─── */}
+      <nav className="mob-nav noprint">
+        {activeId && !anySection ? (
+          // Job detail mode: job-level navigation
+          [
             { label: "Jobs", icon: "←", onClick: () => setActiveId(null), isActive: false },
             { label: "Inspect", icon: "◎", onClick: () => setTab("inspection"), isActive: tab === "inspection" },
             { label: "Quote", icon: "⊟", onClick: () => setTab("quote"), isActive: tab === "quote" },
@@ -810,9 +787,43 @@ export default function Dashboard() {
               <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
               <span style={{ fontSize: 10, letterSpacing: 0.5 }}>{label}</span>
             </button>
-          ))}
-        </nav>
-      )}
+          ))
+        ) : (
+          // Section navigation mode
+          ([
+            { label: "Jobs",  icon: "🏠", isActive: !activeId && !anySection,
+              onClick: () => { setActiveId(null); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); } },
+            { label: "Book",  icon: "📅", isActive: showCalendar,
+              onClick: () => { const n = !showCalendar; setShowCalendar(n); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
+            { label: "CRM",   icon: "👥", isActive: showCustomers,
+              onClick: () => { const n = !showCustomers; setShowCustomers(n); setShowCalendar(false); setShowPipeline(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
+            { label: "Stock", icon: "📦", isActive: showInventory,
+              onClick: () => { const n = !showInventory; setShowInventory(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowAccounting(false); if (n) setActiveId(null); },
+              badge: inventory.filter((i) => i.stock <= i.reorder_at && i.reorder_at > 0).length },
+            { label: "Finance", icon: "₨", isActive: showAccounting,
+              onClick: () => { const n = !showAccounting; setShowAccounting(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); if (n) setActiveId(null); } },
+          ] as { label: string; icon: string; isActive: boolean; onClick: () => void; badge?: number }[]).map(
+            ({ label, icon, isActive, onClick, badge }) => (
+              <button key={label} onClick={onClick}
+                style={{ flex: 1, background: "transparent", border: "none",
+                  color: isActive ? tokens.accent : tokens.faint,
+                  cursor: "pointer", padding: "10px 0 8px", position: "relative",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                  fontFamily: "inherit",
+                  borderTop: `2px solid ${isActive ? tokens.accent : "transparent"}` }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+                <span style={{ fontSize: 10, letterSpacing: 0.5 }}>{label}</span>
+                {!!badge && (
+                  <span style={{ position: "absolute", top: 6, right: "50%", transform: "translateX(10px)",
+                    width: 14, height: 14, background: tokens.danger, color: "#fff",
+                    borderRadius: "50%", fontSize: 9, display: "flex", alignItems: "center",
+                    justifyContent: "center", fontWeight: 700 }}>{badge}</span>
+                )}
+              </button>
+            )
+          )
+        )}
+      </nav>
 
       {/* ─── Settings modal ─── */}
       {showSettings && (
@@ -2013,8 +2024,11 @@ function InventorySection({ isMobile, inventory, setInventory }: {
   const [catFilter, setCatFilter] = useState<string>("All");
   const [itemForm, setItemForm] = useState<ItemForm | null>(null);
   const [itemSaving, setItemSaving] = useState(false);
-  // Per-item adjust quantity (defaults to "1")
   const [adjQty, setAdjQty] = useState<Record<string, string>>({});
+
+  // Debounce stock adjustments: accumulate deltas, flush after 400 ms idle
+  const adjTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const adjPending = useRef<Record<string, number>>({});
 
   const lowStock = inventory.filter((i) => i.reorder_at > 0 && i.stock <= i.reorder_at);
 
@@ -2025,14 +2039,33 @@ function InventorySection({ isMobile, inventory, setInventory }: {
   const getAdj = (id: string) => adjQty[id] ?? "1";
   const setAdj = (id: string, v: string) => setAdjQty((p) => ({ ...p, [id]: v }));
 
-  const adjust = async (item: InventoryItem, delta: number) => {
-    const res = await fetch(`/api/inventory/${item.id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ adjust: delta }),
-    });
-    if (!res.ok) { toast("Couldn't update stock.", "error"); return; }
-    const updated: InventoryItem = await res.json();
-    setInventory((p) => p.map((i) => i.id === updated.id ? updated : i));
+  const adjust = (item: InventoryItem, delta: number) => {
+    // Optimistically update the UI immediately
+    setInventory((p) => p.map((i) =>
+      i.id === item.id ? { ...i, stock: Math.max(0, i.stock + delta) } : i
+    ));
+    // Accumulate and debounce the network call
+    adjPending.current[item.id] = (adjPending.current[item.id] ?? 0) + delta;
+    clearTimeout(adjTimers.current[item.id]);
+    adjTimers.current[item.id] = setTimeout(async () => {
+      const accumulated = adjPending.current[item.id] ?? 0;
+      delete adjPending.current[item.id];
+      if (accumulated === 0) return;
+      const res = await fetch(`/api/inventory/${item.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adjust: accumulated }),
+      });
+      if (!res.ok) {
+        toast("Couldn't update stock.", "error");
+        // Revert optimistic update
+        setInventory((p) => p.map((i) =>
+          i.id === item.id ? { ...i, stock: Math.max(0, i.stock - accumulated) } : i
+        ));
+        return;
+      }
+      const updated: InventoryItem = await res.json();
+      setInventory((p) => p.map((i) => i.id === updated.id ? updated : i));
+    }, 400);
   };
 
   const saveItem = async () => {
