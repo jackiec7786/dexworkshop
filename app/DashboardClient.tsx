@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   Job, Settings, Expense, EXPENSE_CATEGORIES,
   CustomerRecord, CUSTOMER_TAGS,
+  InventoryItem, INVENTORY_CATEGORIES, STOCK_UNITS,
   SERVICE_TYPES, MARK_COLORS, DEX_CODES, CODE_KEYS, pkr, calc, CarDiagram, PrintDoc,
 } from "@/components/shared";
 import { Spinner, tokens, useToast, useConfirm } from "@/components/ui";
@@ -50,6 +51,10 @@ export default function Dashboard() {
   const [showCustomers, setShowCustomers] = useState(false);
   const [customerRecords, setCustomerRecords] = useState<CustomerRecord[]>([]);
 
+  // ─── Inventory state ──────────────────────────────────────────────────────
+  const [showInventory, setShowInventory] = useState(false);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+
   // ─── Accounting state ─────────────────────────────────────────────────────
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showAccounting, setShowAccounting] = useState(false);
@@ -75,10 +80,10 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     setLoading(true); setLoadError(false);
     try {
-      const [rJobs, rSettings, rStatus, rExp, rCust] = await Promise.all([
+      const [rJobs, rSettings, rStatus, rExp, rCust, rInv] = await Promise.all([
         fetch("/api/jobs"), fetch("/api/settings"),
         fetch("/api/auth/status"), fetch("/api/expenses"),
-        fetch("/api/customers"),
+        fetch("/api/customers"), fetch("/api/inventory"),
       ]);
       if (rJobs.status === 401) { onAuthError(); return; }
       if (!rJobs.ok) { setLoadError(true); return; }
@@ -87,6 +92,7 @@ export default function Dashboard() {
       if (rStatus.ok) { const st = await rStatus.json(); setUserEmail(st.email ?? ""); }
       if (rExp.ok) setExpenses(await rExp.json());
       if (rCust.ok) setCustomerRecords(await rCust.json());
+      if (rInv.ok) setInventory(await rInv.json());
     } catch { setLoadError(true); }
     finally { setLoading(false); }
   }, [onAuthError]);
@@ -124,7 +130,8 @@ export default function Dashboard() {
 
   const selectJob = (id: string) => {
     setActiveId(id); setTab("inspection");
-    setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false);
+    setShowAccounting(false); setShowCalendar(false); setShowPipeline(false);
+    setShowCustomers(false); setShowInventory(false);
   };
 
   const newJobForCustomer = async (name: string, phone: string, email: string) => {
@@ -287,16 +294,16 @@ export default function Dashboard() {
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
             onClick={() => setActiveId(null)} aria-label="Back to jobs list">←</button>
         )}
-        {isMobile && (showAccounting || showCalendar || showPipeline || showCustomers) && (
+        {isMobile && (showAccounting || showCalendar || showPipeline || showCustomers || showInventory) && (
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 13, minHeight: 40 }}
-            onClick={() => { setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); }}>← Jobs</button>
+            onClick={() => { setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); }}>← Jobs</button>
         )}
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
 
         {/* Mobile breadcrumb: active job customer name */}
-        {isMobile && active && !showAccounting && !showCalendar && !showPipeline && !showCustomers && (
+        {isMobile && active && !showAccounting && !showCalendar && !showPipeline && !showCustomers && !showInventory && (
           <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
             textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
             {active.customer.name
@@ -310,25 +317,30 @@ export default function Dashboard() {
         {/* Desktop controls */}
         {!isMobile && <>
           {userEmail && <span style={{ fontSize: 12, color: tokens.faint }}>{userEmail}</span>}
-          {(["Calendar","Pipeline","Customers","Accounting"] as const).map((label) => {
-            const active = label === "Calendar" ? showCalendar
+          {(["Calendar","Pipeline","Customers","Inventory","Accounting"] as const).map((label) => {
+            const isActive = label === "Calendar" ? showCalendar
               : label === "Pipeline" ? showPipeline
               : label === "Customers" ? showCustomers
+              : label === "Inventory" ? showInventory
               : showAccounting;
             const icon = label === "Calendar" ? "📅 " : label === "Pipeline" ? "⋮⋮ "
-              : label === "Customers" ? "👥 " : "₨ ";
+              : label === "Customers" ? "👥 " : label === "Inventory" ? "📦 " : "₨ ";
+            const lowStock = label === "Inventory"
+              ? inventory.filter((i) => i.stock <= i.reorder_at && i.reorder_at > 0).length : 0;
             return (
               <button key={label}
-                style={btn(active ? tokens.accent : undefined, active ? "#fff" : undefined)}
+                style={btn(isActive ? tokens.accent : undefined, isActive ? "#fff" : undefined)}
                 onClick={() => {
-                  const next = !active;
+                  const next = !isActive;
                   setShowCalendar(label === "Calendar" ? next : false);
                   setShowPipeline(label === "Pipeline" ? next : false);
                   setShowCustomers(label === "Customers" ? next : false);
+                  setShowInventory(label === "Inventory" ? next : false);
                   setShowAccounting(label === "Accounting" ? next : false);
                   if (next) setActiveId(null);
                 }}>
-                {icon}{label}
+                {icon}{label}{lowStock > 0 && <span style={{ marginLeft: 5, background: tokens.danger,
+                  color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10 }}>{lowStock}</span>}
               </button>
             );
           })}
@@ -339,31 +351,38 @@ export default function Dashboard() {
         {/* Mobile: view icons always visible */}
         {isMobile && <>
           {([
-            { key: "Calendar", icon: "📅", active: showCalendar },
-            { key: "Pipeline", icon: "⋮⋮", active: showPipeline },
-            { key: "Customers", icon: "👥", active: showCustomers },
-            { key: "Accounting", icon: "₨", active: showAccounting },
-          ] as const).map(({ key, icon, active }) => (
+            { key: "Calendar",   icon: "📅", isActive: showCalendar },
+            { key: "Pipeline",   icon: "⋮⋮", isActive: showPipeline },
+            { key: "Customers",  icon: "👥", isActive: showCustomers },
+            { key: "Inventory",  icon: "📦", isActive: showInventory },
+            { key: "Accounting", icon: "₨",  isActive: showAccounting },
+          ] as const).map(({ key, icon, isActive }) => (
             <button key={key}
-              style={{ ...btn(active ? tokens.accent : undefined, active ? "#fff" : undefined),
-                padding: "8px 10px", fontSize: 15, minHeight: 40 }}
+              style={{ ...btn(isActive ? tokens.accent : undefined, isActive ? "#fff" : undefined),
+                padding: "8px 10px", fontSize: 15, minHeight: 40, position: "relative" }}
               aria-label={key}
               onClick={() => {
-                const next = !active;
+                const next = !isActive;
                 setShowCalendar(key === "Calendar" ? next : false);
                 setShowPipeline(key === "Pipeline" ? next : false);
                 setShowCustomers(key === "Customers" ? next : false);
+                setShowInventory(key === "Inventory" ? next : false);
                 setShowAccounting(key === "Accounting" ? next : false);
                 if (next) setActiveId(null);
               }}>
               {icon}
+              {key === "Inventory" && inventory.filter(
+                (i) => i.stock <= i.reorder_at && i.reorder_at > 0).length > 0 && (
+                <span style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7,
+                  background: tokens.danger, borderRadius: "50%" }} />
+              )}
             </button>
           ))}
           <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
             onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
         </>}
 
-        {!showAccounting && !showCalendar && !showPipeline && !showCustomers && (
+        {!showAccounting && !showCalendar && !showPipeline && !showCustomers && !showInventory && (
           <button
             style={{ ...btn("#ff6a2b", "#ffffff"),
               padding: isMobile ? "8px 16px" : "9px 14px",
@@ -382,6 +401,11 @@ export default function Dashboard() {
       {/* ─── Pipeline section ─── */}
       {showPipeline && (
         <PipelineSection isMobile={isMobile} jobs={jobs} onSelectJob={selectJob} onNewJob={newJob} />
+      )}
+
+      {/* ─── Inventory section ─── */}
+      {showInventory && (
+        <InventorySection isMobile={isMobile} inventory={inventory} setInventory={setInventory} />
       )}
 
       {/* ─── Customers section ─── */}
@@ -754,7 +778,7 @@ export default function Dashboard() {
       )}
 
       {/* ─── Mobile bottom nav (job detail only, not in full-screen sections) ─── */}
-      {activeId && !showAccounting && !showCalendar && !showPipeline && !showCustomers && (
+      {activeId && !showAccounting && !showCalendar && !showPipeline && !showCustomers && !showInventory && (
         <nav className="mob-nav noprint">
           {[
             { label: "Jobs", icon: "←", onClick: () => setActiveId(null), isActive: false },
@@ -1941,6 +1965,403 @@ function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggle
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Inventory section ─────────────────────────────────────────────────────────
+
+type ItemForm = {
+  id?: string;
+  name: string; category: string; unit: string;
+  stock: string; reorder_at: string; cost: string;
+  supplier: string; notes: string;
+};
+
+const blankItem = (): ItemForm => ({
+  name: "", category: "Consumable", unit: "pcs",
+  stock: "0", reorder_at: "0", cost: "0", supplier: "", notes: "",
+});
+
+const CAT_BADGE: Record<string, string> = {
+  Film: "#0891b2", Chemical: "#7c3aed", Consumable: tokens.success,
+  Equipment: tokens.warn, Other: tokens.muted,
+};
+
+function InventorySection({ isMobile, inventory, setInventory }: {
+  isMobile: boolean;
+  inventory: InventoryItem[];
+  setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+}) {
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  const [catFilter, setCatFilter] = useState<string>("All");
+  const [itemForm, setItemForm] = useState<ItemForm | null>(null);
+  const [itemSaving, setItemSaving] = useState(false);
+  // Per-item adjust quantity (defaults to "1")
+  const [adjQty, setAdjQty] = useState<Record<string, string>>({});
+
+  const lowStock = inventory.filter((i) => i.reorder_at > 0 && i.stock <= i.reorder_at);
+
+  const visible = inventory.filter((i) =>
+    catFilter === "All" || i.category === catFilter
+  );
+
+  const getAdj = (id: string) => adjQty[id] ?? "1";
+  const setAdj = (id: string, v: string) => setAdjQty((p) => ({ ...p, [id]: v }));
+
+  const adjust = async (item: InventoryItem, delta: number) => {
+    const res = await fetch(`/api/inventory/${item.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adjust: delta }),
+    });
+    if (!res.ok) { toast("Couldn't update stock.", "error"); return; }
+    const updated: InventoryItem = await res.json();
+    setInventory((p) => p.map((i) => i.id === updated.id ? updated : i));
+  };
+
+  const saveItem = async () => {
+    if (!itemForm || !itemForm.name.trim()) { toast("Name is required.", "error"); return; }
+    setItemSaving(true);
+    try {
+      const body = {
+        name: itemForm.name.trim(), category: itemForm.category, unit: itemForm.unit,
+        stock: Number(itemForm.stock) || 0, reorder_at: Number(itemForm.reorder_at) || 0,
+        cost: Number(itemForm.cost) || 0, supplier: itemForm.supplier, notes: itemForm.notes,
+      };
+      if (itemForm.id) {
+        const res = await fetch(`/api/inventory/${itemForm.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) { toast("Couldn't update item.", "error"); return; }
+        const updated: InventoryItem = await res.json();
+        setInventory((p) => p.map((i) => i.id === updated.id ? updated : i));
+      } else {
+        const res = await fetch("/api/inventory", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) { toast("Couldn't add item.", "error"); return; }
+        const created: InventoryItem = await res.json();
+        setInventory((p) => [...p, created].sort((a, b) =>
+          a.category.localeCompare(b.category) || a.name.localeCompare(b.name)));
+      }
+      setItemForm(null);
+      toast("Item saved.", "success");
+    } finally { setItemSaving(false); }
+  };
+
+  const deleteItem = async (id: string) => {
+    const ok = await confirm({ title: "Delete this item?",
+      message: "This removes it from inventory permanently.", confirmText: "Delete", danger: true });
+    if (!ok) return;
+    const res = await fetch(`/api/inventory/${id}`, { method: "DELETE" });
+    if (!res.ok) { toast("Couldn't delete item.", "error"); return; }
+    setInventory((p) => p.filter((i) => i.id !== id));
+    toast("Item deleted.", "success");
+  };
+
+  const totalValue = inventory.reduce((s, i) => s + i.stock * i.cost, 0);
+
+  return (
+    <div style={{ padding: isMobile ? "16px 12px 80px" : "24px 24px 48px",
+      maxWidth: 1100, margin: "0 auto" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <div className="disp" style={{ fontSize: 20, letterSpacing: 1.5 }}>INVENTORY</div>
+        <span style={{ fontSize: 12, color: tokens.faint }}>
+          {inventory.length} items · {pkr(totalValue)} total value
+        </span>
+        <div style={{ flex: 1 }} />
+        <button style={{ ...btn(itemForm && !itemForm.id ? "#fef2f2" : "#ff6a2b",
+          itemForm && !itemForm.id ? tokens.danger : "#ffffff"), padding: "8px 14px" }}
+          onClick={() => setItemForm(itemForm && !itemForm.id ? null : blankItem())}>
+          {itemForm && !itemForm.id ? "✕ Cancel" : "+ Add Item"}
+        </button>
+      </div>
+
+      {/* Low-stock alerts */}
+      {lowStock.length > 0 && (
+        <div style={{ marginBottom: 16, display: "grid",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+          {lowStock.map((item) => (
+            <div key={item.id} style={{ background: "#fff1f1",
+              border: `1px solid ${tokens.danger}`, borderRadius: 8,
+              padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, overflow: "hidden",
+                  textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+                <div style={{ fontSize: 11, color: tokens.danger }}>
+                  {item.stock} {item.unit} left (reorder at {item.reorder_at})
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Inline add/edit form */}
+      {itemForm && (
+        <div style={{ background: tokens.surfaceAlt, border: `1px solid ${tokens.border}`,
+          borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div className="disp" style={{ fontSize: 11, letterSpacing: 2, color: tokens.accent,
+            marginBottom: 12 }}>{itemForm.id ? "EDIT ITEM" : "NEW ITEM"}</div>
+          <div style={{ display: "grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div style={isMobile ? { gridColumn: "1 / -1" } : {}}>
+              <label style={lbl}>Name</label>
+              <input style={fld} value={itemForm.name} placeholder="e.g. Tint Film 50%"
+                onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} />
+            </div>
+            <div>
+              <label style={lbl}>Category</label>
+              <select style={fld} value={itemForm.category}
+                onChange={(e) => setItemForm({ ...itemForm, category: e.target.value })}>
+                {INVENTORY_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Unit</label>
+              <select style={fld} value={itemForm.unit}
+                onChange={(e) => setItemForm({ ...itemForm, unit: e.target.value })}>
+                {STOCK_UNITS.map((u) => <option key={u}>{u}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Supplier</label>
+              <input style={fld} value={itemForm.supplier} placeholder="Optional"
+                onChange={(e) => setItemForm({ ...itemForm, supplier: e.target.value })} />
+            </div>
+          </div>
+          <div style={{ display: "grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
+            <div>
+              <label style={lbl}>Current Stock</label>
+              <input type="number" style={fld} value={itemForm.stock} min="0"
+                onChange={(e) => setItemForm({ ...itemForm, stock: e.target.value })} />
+            </div>
+            <div>
+              <label style={lbl}>Reorder At</label>
+              <input type="number" style={fld} value={itemForm.reorder_at} min="0"
+                onChange={(e) => setItemForm({ ...itemForm, reorder_at: e.target.value })} />
+            </div>
+            <div>
+              <label style={lbl}>Cost / Unit (Rs)</label>
+              <input type="number" style={fld} value={itemForm.cost} min="0"
+                onChange={(e) => setItemForm({ ...itemForm, cost: e.target.value })} />
+            </div>
+            <div>
+              <label style={lbl}>Notes</label>
+              <input style={fld} value={itemForm.notes} placeholder="Optional"
+                onChange={(e) => setItemForm({ ...itemForm, notes: e.target.value })} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={btn()} onClick={() => setItemForm(null)}>Cancel</button>
+            <button style={{ ...btn("#ff6a2b", "#ffffff"), opacity: itemSaving ? 0.7 : 1 }}
+              disabled={itemSaving} onClick={saveItem}>
+              {itemSaving ? "Saving…" : itemForm.id ? "Update Item" : "Add Item"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Category filter */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+        {["All", ...INVENTORY_CATEGORIES].map((cat) => (
+          <button key={cat} onClick={() => setCatFilter(cat)}
+            style={{ ...btn(catFilter === cat ? tokens.accent : "#f3f4f6",
+              catFilter === cat ? "#fff" : "#374151"),
+              padding: "6px 12px", fontSize: 12 }}>
+            {cat}
+            {cat !== "All" && (
+              <span style={{ marginLeft: 5, opacity: 0.7 }}>
+                {inventory.filter((i) => i.category === cat).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Items */}
+      {visible.length === 0 ? (
+        <div style={{ padding: "48px 16px", textAlign: "center", color: tokens.faint,
+          background: tokens.surface, border: `1px solid ${tokens.border}`, borderRadius: 10 }}>
+          {inventory.length === 0
+            ? "No items yet — click + Add Item to start tracking stock."
+            : `No ${catFilter} items.`}
+        </div>
+      ) : isMobile ? (
+        /* ── Mobile cards ── */
+        <div style={{ display: "grid", gap: 8 }}>
+          {visible.map((item) => {
+            const isLow = item.reorder_at > 0 && item.stock <= item.reorder_at;
+            const adjVal = Number(getAdj(item.id)) || 1;
+            return (
+              <div key={item.id} style={{ background: tokens.surface,
+                border: `1px solid ${isLow ? tokens.danger : tokens.border}`,
+                borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between",
+                  alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{item.name}</div>
+                    <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 10, color: CAT_BADGE[item.category] || tokens.muted,
+                        border: `1px solid ${CAT_BADGE[item.category] || tokens.muted}`,
+                        borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>
+                        {item.category}
+                      </span>
+                      {item.supplier && (
+                        <span style={{ fontSize: 11, color: tokens.faint }}>{item.supplier}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16,
+                      color: isLow ? tokens.danger : tokens.text }}>
+                      {item.stock} <span style={{ fontSize: 12, fontWeight: 400 }}>{item.unit}</span>
+                    </div>
+                    {item.cost > 0 && (
+                      <div style={{ fontSize: 11, color: tokens.faint }}>
+                        {pkr(item.stock * item.cost)} total
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Adjust row */}
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <input type="number" min="0" value={getAdj(item.id)}
+                    onChange={(e) => setAdj(item.id, e.target.value)}
+                    style={{ ...fld, width: 64, padding: "6px 8px", fontSize: 13, textAlign: "center" }} />
+                  <button style={{ ...btn(tokens.success + "22", tokens.success),
+                    padding: "6px 12px", fontSize: 12 }}
+                    onClick={() => adjust(item, adjVal)}>+ Receive</button>
+                  <button style={{ ...btn("#fef2f2", tokens.danger), padding: "6px 12px", fontSize: 12 }}
+                    onClick={() => adjust(item, -adjVal)}>− Use</button>
+                  <button style={{ ...btn(), padding: "6px 10px", fontSize: 12, marginLeft: "auto" }}
+                    onClick={() => setItemForm({ id: item.id, name: item.name,
+                      category: item.category, unit: item.unit,
+                      stock: String(item.stock), reorder_at: String(item.reorder_at),
+                      cost: String(item.cost), supplier: item.supplier, notes: item.notes })}>
+                    Edit
+                  </button>
+                  <button style={{ ...btn("#fef2f2", tokens.danger), padding: "6px 10px", fontSize: 12 }}
+                    onClick={() => deleteItem(item.id)}>Del</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* ── Desktop table ── */
+        <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+          borderRadius: 10, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${tokens.border}`, color: tokens.faint,
+                textAlign: "left", fontSize: 11, letterSpacing: 0.5 }}>
+                {["Item", "Category", "Stock", "Reorder", "Cost/unit", "Total Value", "Adjust", ""].map((h) => (
+                  <th key={h} style={{ padding: "10px 14px", fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((item) => {
+                const isLow = item.reorder_at > 0 && item.stock <= item.reorder_at;
+                const adjVal = Number(getAdj(item.id)) || 1;
+                return (
+                  <tr key={item.id} style={{ borderBottom: `1px solid ${tokens.border}`,
+                    background: isLow ? "#fff8f8" : "transparent" }}>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ fontWeight: 600 }}>{item.name}</div>
+                      {item.supplier && (
+                        <div style={{ fontSize: 11, color: tokens.faint, marginTop: 2 }}>
+                          {item.supplier}
+                        </div>
+                      )}
+                      {item.notes && (
+                        <div style={{ fontSize: 11, color: tokens.faint, marginTop: 1 }}>{item.notes}</div>
+                      )}
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ fontSize: 11, fontWeight: 600,
+                        color: CAT_BADGE[item.category] || tokens.muted,
+                        border: `1px solid ${CAT_BADGE[item.category] || tokens.muted}`,
+                        borderRadius: 4, padding: "2px 7px" }}>
+                        {item.category}
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ fontWeight: 700, fontSize: 15,
+                        color: isLow ? tokens.danger : tokens.text }}>
+                        {item.stock}
+                      </span>
+                      <span style={{ fontSize: 12, color: tokens.faint, marginLeft: 4 }}>{item.unit}</span>
+                      {isLow && <span style={{ marginLeft: 6, fontSize: 14 }}>⚠️</span>}
+                    </td>
+                    <td style={{ padding: "10px 14px", color: tokens.muted }}>
+                      {item.reorder_at > 0 ? `${item.reorder_at} ${item.unit}` : "—"}
+                    </td>
+                    <td style={{ padding: "10px 14px", color: tokens.muted }}>
+                      {item.cost > 0 ? pkr(item.cost) : "—"}
+                    </td>
+                    <td style={{ padding: "10px 14px", fontWeight: 600, color: tokens.accent }}>
+                      {item.cost > 0 ? pkr(item.stock * item.cost) : "—"}
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <input type="number" min="0" value={getAdj(item.id)}
+                          onChange={(e) => setAdj(item.id, e.target.value)}
+                          style={{ ...fld, width: 56, padding: "5px 7px", fontSize: 12,
+                            textAlign: "center", minHeight: 0 }} />
+                        <button title="Receive stock"
+                          style={{ ...btn(tokens.success + "22", tokens.success),
+                            padding: "5px 9px", fontSize: 12, minHeight: 0 }}
+                          onClick={() => adjust(item, adjVal)}>+</button>
+                        <button title="Use stock"
+                          style={{ ...btn("#fef2f2", tokens.danger),
+                            padding: "5px 9px", fontSize: 12, minHeight: 0 }}
+                          onClick={() => adjust(item, -adjVal)}>−</button>
+                      </div>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button style={{ ...btn(), padding: "5px 9px", fontSize: 11, minHeight: 0 }}
+                          onClick={() => setItemForm({ id: item.id, name: item.name,
+                            category: item.category, unit: item.unit,
+                            stock: String(item.stock), reorder_at: String(item.reorder_at),
+                            cost: String(item.cost), supplier: item.supplier, notes: item.notes })}>
+                          Edit
+                        </button>
+                        <button style={{ ...btn("#fef2f2", tokens.danger),
+                          padding: "5px 9px", fontSize: 11, minHeight: 0 }}
+                          onClick={() => deleteItem(item.id)}>Del</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {/* Footer total */}
+          {visible.length > 0 && (
+            <div style={{ padding: "10px 14px", background: tokens.surfaceAlt,
+              borderTop: `1px solid ${tokens.border}`, display: "flex",
+              justifyContent: "flex-end", gap: 24, fontSize: 13 }}>
+              <span style={{ color: tokens.faint }}>
+                {visible.length} item{visible.length !== 1 ? "s" : ""}
+              </span>
+              <span style={{ fontWeight: 700, color: tokens.accent }}>
+                {pkr(visible.reduce((s, i) => s + i.stock * i.cost, 0))} stock value
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

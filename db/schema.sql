@@ -49,6 +49,25 @@ CREATE TRIGGER jobs_touch BEFORE UPDATE ON jobs
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Inventory: stock items for the shop (film rolls, chemicals, consumables…).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS inventory (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner      TEXT NOT NULL DEFAULT 'shop',
+  name       TEXT NOT NULL,
+  category   TEXT NOT NULL DEFAULT 'Other',
+  unit       TEXT NOT NULL DEFAULT 'pcs',
+  stock      NUMERIC(12,2) NOT NULL DEFAULT 0,
+  reorder_at NUMERIC(12,2) NOT NULL DEFAULT 0,
+  cost       NUMERIC(12,2) NOT NULL DEFAULT 0,
+  supplier   TEXT NOT NULL DEFAULT '',
+  notes      TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS inventory_owner_idx ON inventory(owner, category, name);
+
+-- ---------------------------------------------------------------------------
 -- Customers: augmentation store for notes & tags; join to jobs via phone.
 -- Phone is stored as digits-only (e.g. "923214432687"). A partial unique
 -- index prevents duplicate records for the same phone, while still allowing

@@ -39,12 +39,28 @@ export type Settings = {
 };
 
 export const CUSTOMER_TAGS = ["VIP", "Regular", "Fleet", "Wholesale", "Referred", "Blocked"] as const;
-
 export type CustomerRecord = {
   id: string;
   phone: string;  // normalized digits — the join key
   notes: string;
   tags: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export const INVENTORY_CATEGORIES = ["Film", "Chemical", "Consumable", "Equipment", "Other"] as const;
+export const STOCK_UNITS = ["pcs", "rolls", "liters", "ml", "meters", "kg", "g", "boxes", "sheets", "sets"] as const;
+
+export type InventoryItem = {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  stock: number;
+  reorder_at: number;
+  cost: number;
+  supplier: string;
+  notes: string;
   created_at: string;
   updated_at: string;
 };
