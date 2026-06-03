@@ -41,6 +41,10 @@ export default function Dashboard() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  // ─── Shop Management state ────────────────────────────────────────────────
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showPipeline, setShowPipeline] = useState(false);
+
   // ─── Accounting state ─────────────────────────────────────────────────────
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showAccounting, setShowAccounting] = useState(false);
@@ -96,6 +100,7 @@ export default function Dashboard() {
           status: job.status, customer: job.customer, vehicle: job.vehicle,
           marks: job.marks, line_items: job.line_items, notes: job.notes,
           discount: job.discount, tax_rate: job.tax_rate, deposit: job.deposit, photos: job.photos,
+          scheduled_date: job.scheduled_date ?? null,
         }),
       });
       if (res.status === 401) onAuthError();
@@ -111,7 +116,8 @@ export default function Dashboard() {
   };
 
   const selectJob = (id: string) => {
-    setActiveId(id); setTab("inspection"); setShowAccounting(false);
+    setActiveId(id); setTab("inspection");
+    setShowAccounting(false); setShowCalendar(false); setShowPipeline(false);
   };
 
   const newJob = async () => {
@@ -259,16 +265,16 @@ export default function Dashboard() {
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
             onClick={() => setActiveId(null)} aria-label="Back to jobs list">←</button>
         )}
-        {isMobile && showAccounting && (
+        {isMobile && (showAccounting || showCalendar || showPipeline) && (
           <button style={{ ...btn(), padding: "8px 12px", fontSize: 13, minHeight: 40 }}
-            onClick={() => setShowAccounting(false)}>← Jobs</button>
+            onClick={() => { setShowAccounting(false); setShowCalendar(false); setShowPipeline(false); }}>← Jobs</button>
         )}
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
 
         {/* Mobile breadcrumb: active job customer name */}
-        {isMobile && active && !showAccounting && (
+        {isMobile && active && !showAccounting && !showCalendar && !showPipeline && (
           <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
             textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
             {active.customer.name
@@ -282,25 +288,41 @@ export default function Dashboard() {
         {/* Desktop controls */}
         {!isMobile && <>
           {userEmail && <span style={{ fontSize: 12, color: tokens.faint }}>{userEmail}</span>}
+          <button style={btn(showCalendar ? tokens.accent : undefined, showCalendar ? "#fff" : undefined)}
+            onClick={() => { setShowCalendar(!showCalendar); setShowAccounting(false); setShowPipeline(false); setActiveId(null); }}>
+            📅 Calendar
+          </button>
+          <button style={btn(showPipeline ? tokens.accent : undefined, showPipeline ? "#fff" : undefined)}
+            onClick={() => { setShowPipeline(!showPipeline); setShowAccounting(false); setShowCalendar(false); setActiveId(null); }}>
+            ⋮⋮ Pipeline
+          </button>
           <button style={btn(showAccounting ? tokens.accent : undefined, showAccounting ? "#fff" : undefined)}
-            onClick={() => { setShowAccounting(!showAccounting); setActiveId(null); }}>
+            onClick={() => { setShowAccounting(!showAccounting); setShowCalendar(false); setShowPipeline(false); setActiveId(null); }}>
             ₨ Accounting
           </button>
           <button style={btn()} onClick={() => setShowSettings(true)}>⚙ Settings</button>
           <button style={btn()} onClick={signOut}>Sign out</button>
         </>}
 
-        {/* Mobile: accounting + settings icons always visible */}
+        {/* Mobile: view icons always visible */}
         {isMobile && <>
+          <button style={{ ...btn(showCalendar ? tokens.accent : undefined, showCalendar ? "#fff" : undefined),
+            padding: "8px 10px", fontSize: 15, minHeight: 40 }}
+            onClick={() => { setShowCalendar(!showCalendar); setShowAccounting(false); setShowPipeline(false); setActiveId(null); }}
+            aria-label="Calendar">📅</button>
+          <button style={{ ...btn(showPipeline ? tokens.accent : undefined, showPipeline ? "#fff" : undefined),
+            padding: "8px 10px", fontSize: 15, minHeight: 40 }}
+            onClick={() => { setShowPipeline(!showPipeline); setShowAccounting(false); setShowCalendar(false); setActiveId(null); }}
+            aria-label="Pipeline">⋮⋮</button>
           <button style={{ ...btn(showAccounting ? tokens.accent : undefined, showAccounting ? "#fff" : undefined),
-            padding: "8px 12px", fontSize: 15, minHeight: 40 }}
-            onClick={() => { setShowAccounting(!showAccounting); setActiveId(null); }}
+            padding: "8px 10px", fontSize: 15, minHeight: 40 }}
+            onClick={() => { setShowAccounting(!showAccounting); setShowCalendar(false); setShowPipeline(false); setActiveId(null); }}
             aria-label="Accounting">₨</button>
-          <button style={{ ...btn(), padding: "8px 12px", fontSize: 15, minHeight: 40 }}
+          <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
             onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
         </>}
 
-        {!showAccounting && (
+        {!showAccounting && !showCalendar && !showPipeline && (
           <button
             style={{ ...btn("#ff6a2b", "#ffffff"),
               padding: isMobile ? "8px 16px" : "9px 14px",
@@ -310,6 +332,16 @@ export default function Dashboard() {
           </button>
         )}
       </header>
+
+      {/* ─── Calendar section ─── */}
+      {showCalendar && (
+        <CalendarSection isMobile={isMobile} jobs={jobs} onSelectJob={selectJob} />
+      )}
+
+      {/* ─── Pipeline section ─── */}
+      {showPipeline && (
+        <PipelineSection isMobile={isMobile} jobs={jobs} onSelectJob={selectJob} onNewJob={newJob} />
+      )}
 
       {/* ─── Accounting section (full width) ─── */}
       {showAccounting && (
@@ -321,8 +353,8 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ─── App shell: only when not in accounting ─── */}
-      {!showAccounting && (
+      {/* ─── App shell: only when not in a full-screen section ─── */}
+      {!showAccounting && !showCalendar && !showPipeline && (
         <div className="app-shell" data-panel={activeId ? "detail" : "list"}>
 
           {/* ── Job list sidebar ── */}
@@ -449,6 +481,30 @@ export default function Dashboard() {
                           <F key={f} label={f === "vin" ? "VIN" : f} value={active.vehicle[f] || ""}
                             onChange={(v) => updateActive((j) => ({ ...j, vehicle: { ...j.vehicle, [f]: v } }))} />
                         ))}
+                      </div>
+                    </Section>
+
+                    <Section title="Booking Date">
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                          <label style={lbl}>Scheduled Date</label>
+                          <input type="date" style={{ ...fld, width: "auto" }}
+                            value={active.scheduled_date || ""}
+                            onChange={(e) => updateActive((j) => ({ ...j, scheduled_date: e.target.value || null }))} />
+                        </div>
+                        {active.scheduled_date && (
+                          <div style={{ marginTop: 20, fontSize: 13, color: tokens.muted }}>
+                            {new Date(active.scheduled_date + "T00:00:00").toLocaleDateString("en-GB",
+                              { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                          </div>
+                        )}
+                        {active.scheduled_date && (
+                          <button style={{ marginTop: 20, ...btn("#fef2f2", tokens.danger),
+                            padding: "5px 10px", fontSize: 12, minHeight: 0 }}
+                            onClick={() => updateActive((j) => ({ ...j, scheduled_date: null }))}>
+                            Clear
+                          </button>
+                        )}
                       </div>
                     </Section>
 
@@ -647,8 +703,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ─── Mobile bottom nav (job detail only, not in accounting) ─── */}
-      {activeId && !showAccounting && (
+      {/* ─── Mobile bottom nav (job detail only, not in full-screen sections) ─── */}
+      {activeId && !showAccounting && !showCalendar && !showPipeline && (
         <nav className="mob-nav noprint">
           {[
             { label: "Jobs", icon: "←", onClick: () => setActiveId(null), isActive: false },
@@ -1109,6 +1165,323 @@ function AccountingSection({
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Pipeline section ─────────────────────────────────────────────────────────
+const PIPELINE_STATUSES = ["Quote", "Invoice", "Paid"] as const;
+const PIPE_STATUS_COLOR: Record<string, string> = {
+  Quote: tokens.info, Invoice: tokens.warn, Paid: tokens.success,
+};
+
+function PipelineSection({ isMobile, jobs, onSelectJob, onNewJob }: {
+  isMobile: boolean;
+  jobs: Job[];
+  onSelectJob: (id: string) => void;
+  onNewJob: () => void;
+}) {
+  return (
+    <div style={{ padding: isMobile ? "16px 12px 80px" : "24px 24px 48px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <div className="disp" style={{ fontSize: 20, letterSpacing: 1.5 }}>PIPELINE</div>
+        <div style={{ flex: 1 }} />
+        <button style={{ ...btn("#ff6a2b", "#ffffff"), padding: "8px 14px" }} onClick={onNewJob}>
+          + New Job
+        </button>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+        gap: 16,
+        alignItems: "start",
+        overflowX: isMobile ? "visible" : "auto",
+      }}>
+        {PIPELINE_STATUSES.map((status) => {
+          const col = jobs.filter((j) => j.status === status);
+          const sc = PIPE_STATUS_COLOR[status];
+          const total = col.reduce((s, j) => s + calc(j).total, 0);
+          return (
+            <div key={status} style={{ background: tokens.surface,
+              border: `1px solid ${tokens.border}`, borderRadius: 10, overflow: "hidden" }}>
+              {/* Column header */}
+              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}`,
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                borderTop: `3px solid ${sc}` }}>
+                <span className="disp" style={{ fontSize: 12, letterSpacing: 1.5, color: sc }}>
+                  {status.toUpperCase()}
+                </span>
+                <span style={{ fontSize: 12, color: tokens.faint }}>
+                  {col.length} job{col.length !== 1 ? "s" : ""}
+                  {col.length > 0 && ` · ${pkr(total)}`}
+                </span>
+              </div>
+
+              {col.length === 0 ? (
+                <div style={{ padding: "28px 16px", textAlign: "center", color: tokens.faint, fontSize: 13 }}>
+                  No {status.toLowerCase()} jobs
+                </div>
+              ) : (
+                col.map((j) => {
+                  const c = calc(j);
+                  return (
+                    <div key={j.id} onClick={() => onSelectJob(j.id)}
+                      style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}`,
+                        cursor: "pointer", transition: "background 0.1s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 3,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {j.customer.name || "Unnamed"}
+                      </div>
+                      <div style={{ fontSize: 11, color: tokens.muted, marginBottom: 6 }}>
+                        {[j.vehicle.year, j.vehicle.make, j.vehicle.model].filter(Boolean).join(" ") || "No vehicle"}
+                        {j.vehicle.plate ? ` · ${j.vehicle.plate}` : ""}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between",
+                        alignItems: "center", fontSize: 12 }}>
+                        <span style={{ color: tokens.faint }}>
+                          {j.line_items.length ? `${j.line_items.length} item${j.line_items.length !== 1 ? "s" : ""}` : "No items"}
+                        </span>
+                        <span style={{ fontWeight: 700, color: tokens.accent }}>{pkr(c.total)}</span>
+                      </div>
+                      {j.scheduled_date && (
+                        <div style={{ marginTop: 5, fontSize: 11, color: tokens.info,
+                          display: "flex", alignItems: "center", gap: 4 }}>
+                          <span>📅</span>
+                          <span>{new Date(j.scheduled_date + "T00:00:00").toLocaleDateString("en-GB",
+                            { day: "numeric", month: "short" })}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Calendar section ─────────────────────────────────────────────────────────
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function CalendarSection({ isMobile, jobs, onSelectJob }: {
+  isMobile: boolean;
+  jobs: Job[];
+  onSelectJob: (id: string) => void;
+}) {
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth()); // 0-indexed
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const prevMonth = () => { if (month === 0) { setYear(y => y - 1); setMonth(11); } else setMonth(m => m - 1); };
+  const nextMonth = () => { if (month === 11) { setYear(y => y + 1); setMonth(0); } else setMonth(m => m + 1); };
+
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = today.toISOString().slice(0, 10);
+
+  // Map scheduled_date → jobs[]
+  const byDate: Record<string, Job[]> = {};
+  for (const j of jobs) {
+    if (j.scheduled_date) {
+      byDate[j.scheduled_date] = [...(byDate[j.scheduled_date] || []), j];
+    }
+  }
+
+  const selectedJobs = selectedDate ? (byDate[selectedDate] || []) : [];
+
+  const cells: (number | null)[] = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  // Pad to complete last row
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const unscheduled = jobs.filter((j) => !j.scheduled_date);
+
+  return (
+    <div style={{ padding: isMobile ? "16px 12px 80px" : "24px 24px 48px",
+      maxWidth: 960, margin: "0 auto" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <div className="disp" style={{ fontSize: 20, letterSpacing: 1.5 }}>CALENDAR</div>
+        <div style={{ flex: 1 }} />
+        <button style={{ ...btn(), padding: "7px 13px" }} onClick={prevMonth}>‹</button>
+        <span style={{ fontWeight: 700, fontSize: 14, minWidth: 130, textAlign: "center" }}>
+          {MONTHS[month]} {year}
+        </span>
+        <button style={{ ...btn(), padding: "7px 13px" }} onClick={nextMonth}>›</button>
+      </div>
+
+      <div style={{ display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "1fr 340px", gap: 16, alignItems: "start" }}>
+
+        {/* ── Month grid ── */}
+        <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+          borderRadius: 10, overflow: "hidden" }}>
+          {/* Day headers */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+            borderBottom: `1px solid ${tokens.border}` }}>
+            {DAY_NAMES.map((d) => (
+              <div key={d} style={{ padding: "8px 4px", textAlign: "center",
+                fontSize: 11, fontWeight: 700, color: tokens.faint, letterSpacing: 0.5 }}>
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Cells */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+            {cells.map((day, i) => {
+              if (day === null) {
+                return <div key={`e${i}`} style={{ padding: "10px 4px", minHeight: 52 }} />;
+              }
+              const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const dayJobs = byDate[dateStr] || [];
+              const isToday = dateStr === todayStr;
+              const isSelected = dateStr === selectedDate;
+
+              return (
+                <div key={day} onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                  style={{
+                    padding: "8px 4px", minHeight: 52, cursor: "pointer",
+                    borderBottom: `1px solid ${tokens.border}`,
+                    borderRight: `1px solid ${tokens.border}`,
+                    background: isSelected ? "#fff8f5" : isToday ? "#f0f9ff" : "transparent",
+                    transition: "background 0.1s",
+                  }}>
+                  <div style={{ textAlign: "center", fontSize: 13, fontWeight: isToday ? 700 : 400,
+                    color: isToday ? tokens.accent : tokens.text,
+                    width: 24, height: 24, lineHeight: "24px", margin: "0 auto",
+                    borderRadius: "50%",
+                    border: isSelected ? `2px solid ${tokens.accent}` : isToday ? `2px solid ${tokens.info}` : "none",
+                  }}>
+                    {day}
+                  </div>
+                  {/* Job dots */}
+                  {dayJobs.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 2,
+                      justifyContent: "center", marginTop: 4 }}>
+                      {dayJobs.slice(0, 4).map((j) => (
+                        <span key={j.id} style={{ width: 7, height: 7, borderRadius: "50%",
+                          background: PIPE_STATUS_COLOR[j.status] || tokens.muted,
+                          flexShrink: 0 }} />
+                      ))}
+                      {dayJobs.length > 4 && (
+                        <span style={{ fontSize: 9, color: tokens.faint, lineHeight: "7px" }}>
+                          +{dayJobs.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Day detail panel ── */}
+        <div style={{ display: "grid", gap: 12 }}>
+          {selectedDate ? (
+            <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+              borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}` }}>
+                <span className="disp" style={{ fontSize: 11, letterSpacing: 2, color: tokens.accent }}>
+                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-GB",
+                    { weekday: "long", day: "numeric", month: "long" }).toUpperCase()}
+                </span>
+              </div>
+              {selectedJobs.length === 0 ? (
+                <div style={{ padding: "24px 16px", textAlign: "center", color: tokens.faint, fontSize: 13 }}>
+                  No jobs booked for this day.
+                </div>
+              ) : (
+                selectedJobs.map((j) => {
+                  const c = calc(j);
+                  const sc = PIPE_STATUS_COLOR[j.status];
+                  return (
+                    <div key={j.id} onClick={() => onSelectJob(j.id)}
+                      style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}`,
+                        cursor: "pointer" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                      <div style={{ display: "flex", justifyContent: "space-between",
+                        alignItems: "flex-start", gap: 8 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden",
+                            textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {j.customer.name || "Unnamed"}
+                          </div>
+                          <div style={{ fontSize: 11, color: tokens.muted, marginTop: 2 }}>
+                            {[j.vehicle.year, j.vehicle.make, j.vehicle.model].filter(Boolean).join(" ") || "No vehicle"}
+                            {j.vehicle.plate ? ` · ${j.vehicle.plate}` : ""}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column",
+                          alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                          <span style={{ fontSize: 10, color: sc, border: `1px solid ${sc}`,
+                            borderRadius: 4, padding: "2px 7px" }}>{j.status}</span>
+                          <span style={{ fontWeight: 700, color: tokens.accent, fontSize: 12 }}>
+                            {pkr(c.total)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+              borderRadius: 10, padding: "24px 16px", textAlign: "center",
+              color: tokens.faint, fontSize: 13 }}>
+              Tap a day to see booked jobs.
+            </div>
+          )}
+
+          {/* Unscheduled jobs */}
+          {unscheduled.length > 0 && (
+            <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`,
+              borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}` }}>
+                <span className="disp" style={{ fontSize: 11, letterSpacing: 2, color: tokens.faint }}>
+                  UNSCHEDULED — {unscheduled.length}
+                </span>
+              </div>
+              {unscheduled.slice(0, 6).map((j) => (
+                <div key={j.id} onClick={() => onSelectJob(j.id)}
+                  style={{ padding: "10px 16px", borderBottom: `1px solid ${tokens.border}`,
+                    cursor: "pointer", fontSize: 13 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                  <div style={{ fontWeight: 600, overflow: "hidden",
+                    textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {j.customer.name || "Unnamed"}
+                  </div>
+                  <div style={{ fontSize: 11, color: tokens.muted, marginTop: 2 }}>
+                    {j.vehicle.plate || [j.vehicle.make, j.vehicle.model].filter(Boolean).join(" ") || "No vehicle"}
+                    {" · "}
+                    <span style={{ color: PIPE_STATUS_COLOR[j.status] }}>{j.status}</span>
+                  </div>
+                </div>
+              ))}
+              {unscheduled.length > 6 && (
+                <div style={{ padding: "10px 16px", fontSize: 12, color: tokens.faint,
+                  textAlign: "center" }}>
+                  +{unscheduled.length - 6} more — open job to set a booking date
+                </div>
+              )}
             </div>
           )}
         </div>

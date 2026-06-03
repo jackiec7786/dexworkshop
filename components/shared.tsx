@@ -30,6 +30,7 @@ export type Job = {
   tax_rate: number;
   deposit: number;
   photos: { url: string; caption?: string }[];
+  scheduled_date?: string | null; // "YYYY-MM-DD" booking date
   created_at: string;
 };
 export type Settings = {

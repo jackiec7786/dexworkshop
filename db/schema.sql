@@ -35,6 +35,11 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 CREATE INDEX IF NOT EXISTS jobs_owner_idx ON jobs(owner, created_at DESC);
 
+-- Phase 2: booking date for the shop calendar.
+-- Run this if upgrading from an earlier schema version:
+-- ALTER TABLE jobs ADD COLUMN IF NOT EXISTS scheduled_date DATE;
+-- CREATE INDEX IF NOT EXISTS jobs_scheduled_idx ON jobs(owner, scheduled_date);
+
 CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
