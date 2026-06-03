@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { stackServerApp } from "@/lib/stack";
 import { sql } from "@/lib/db";
 
 export async function PATCH(
@@ -7,8 +6,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const user = await stackServerApp.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const b = await req.json();
   const rows = await sql`
     UPDATE jobs SET
@@ -22,7 +19,7 @@ export async function PATCH(
       tax_rate   = COALESCE(${b.tax_rate   ?? null}, tax_rate),
       deposit    = COALESCE(${b.deposit    ?? null}, deposit),
       photos     = COALESCE(${b.photos     != null ? JSON.stringify(b.photos)     : null}::jsonb, photos)
-    WHERE id = ${id} AND owner = ${user.id}
+    WHERE id = ${id}
     RETURNING *
   `;
   if (!rows[0]) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -34,8 +31,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const user = await stackServerApp.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  await sql`DELETE FROM jobs WHERE id = ${id} AND owner = ${user.id}`;
+  await sql`DELETE FROM jobs WHERE id = ${id}`;
   return NextResponse.json({ ok: true });
 }

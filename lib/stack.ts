@@ -1,5 +1,2 @@
-import "server-only";
-import { StackServerApp } from "@stackframe/stack";
-export const stackServerApp = new StackServerApp({
-  tokenStore: "nextjs-cookie",
-});
+// Auth removed — single-user internal tool
+export {};

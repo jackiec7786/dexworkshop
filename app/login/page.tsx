@@ -1,5 +1,4 @@
-export const dynamic = "force-dynamic";
-import LoginClient from "./LoginClient";
+import { redirect } from "next/navigation";
 export default function LoginPage() {
-  return <LoginClient />;
+  redirect("/");
 }

@@ -1,2 +1,3 @@
-import { stackServerApp } from "@/lib/stack";
-export const { GET, POST } = stackServerApp.createNextjsHandler();
+import { NextResponse } from "next/server";
+export function GET() { return NextResponse.json({ error: "not found" }, { status: 404 }); }
+export function POST() { return NextResponse.json({ error: "not found" }, { status: 404 }); }

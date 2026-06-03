@@ -1,14 +1,10 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@stackframe/stack";
 import {
   Job, Settings, SERVICE_TYPES, MARK_COLORS, DEX_CODES, CODE_KEYS, pkr, calc, CarDiagram, PrintDoc,
 } from "@/components/shared";
 
 export default function Dashboard() {
-  const router = useRouter();
-  const user = useUser();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,14 +20,13 @@ export default function Dashboard() {
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
     (async () => {
       const [r1, r2] = await Promise.all([fetch("/api/jobs"), fetch("/api/settings")]);
       if (r1.ok) setJobs(await r1.json());
       if (r2.ok) { const s = await r2.json(); if (s) setSettings(s); }
       setLoading(false);
     })();
-  }, [!!user]); // eslint-disable-line
+  }, []);
 
   const active = jobs.find((j) => j.id === activeId) || null;
   const cur = settings.currency || "Rs";
@@ -81,8 +76,6 @@ export default function Dashboard() {
     setShowSettings(false);
   };
 
-  const signOut = async () => { await user?.signOut(); router.push("/login"); };
-
   const uploadPhoto = async (file: File) => {
     if (!active) return;
     const formData = new FormData();
@@ -110,7 +103,6 @@ export default function Dashboard() {
         <img src="/dex-logo.png" alt="DEX" style={{ height: 32, objectFit: "contain" }} />
         <div style={{ flex: 1 }} />
         <button style={btn()} onClick={() => setShowSettings(true)}>⚙ Settings</button>
-        <button style={btn()} onClick={signOut}>Sign out</button>
         <button style={btn("#ff6a2b", "#0c0d0f")} onClick={newJob}>+ New Job</button>
       </header>
 
