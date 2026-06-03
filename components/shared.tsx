@@ -64,8 +64,16 @@ export function calc(job: Job) {
   return { sub, disc, taxed, total, due };
 }
 
-// Colour palette used across all car diagram views
-const CAR = { body: "#dde6f0", glass: "#aec6dc", trim: "#c8d4e2", wheel: "#8298ae", hub: "#e8ecf2", stroke: "#5a7080" };
+// Colour palette — clean schematic matching the reference image
+const CAR = {
+  body:   "#f5f7f8",   // near-white body
+  glass:  "#96b2bc",   // blue-gray glass (shaded like reference)
+  roof:   "#b8ccd4",   // cabin area in top-down view
+  trim:   "#e0e8ec",   // bumpers / B-pillar
+  wheel:  "#4e6068",   // dark tyre
+  hub:    "#b4c4ca",   // wheel hub ring
+  stroke: "#3a4850",   // all outlines
+};
 
 export function CarDiagram({
   view, marks, onAdd, onRemove,
@@ -84,150 +92,138 @@ export function CarDiagram({
   const sw = "1.5";
   return (
     <div ref={ref} onClick={click} style={{ position: "relative", cursor: "crosshair",
-      background: "#f0f4f8", border: "1px solid #dde3ec", borderRadius: 10, aspectRatio: "16/9" }}>
+      background: "#ffffff", border: "1px solid #d4dde2", borderRadius: 10, aspectRatio: "16/9" }}>
       <svg viewBox="0 0 320 180" style={{ width: "100%", height: "100%", display: "block" }}
         strokeLinecap="round" strokeLinejoin="round">
 
-        {/* ── TOP VIEW ── looking straight down, front at top */}
+        {/* ── TOP VIEW ── overhead, front = left, rear = right */}
         {view === "top" && <>
-          {/* Body outline with wheel-arch bumps on left and right */}
+          {/* Body with concave wheel-arch indentations on top and bottom sides */}
           <path fill={CAR.body} stroke={s} strokeWidth={sw}
-            d="M118 18 Q160 15 202 18 L232 28 Q252 44 254 56
-               Q262 56 264 66 Q262 76 254 76
-               L254 96
-               Q262 96 264 106 Q262 116 254 116
-               Q252 136 232 152 L202 162 Q160 165 118 162 L88 152
-               Q68 136 66 116
-               Q58 116 56 106 Q58 96 66 96
-               L66 76
-               Q58 76 56 66 Q58 56 66 56
-               Q68 44 88 28 Z" />
-          {/* Windshield from above (front trapezoid) */}
+            d="M 22,76 Q 16,84 16,90 Q 16,96 22,104
+               L 40,120 Q 54,130 66,132 Q 72,126 78,132
+               L 242,132 Q 248,126 254,132 Q 266,130 280,122
+               L 298,104 Q 304,96 304,90 Q 304,84 298,76
+               L 280,58 Q 266,50 254,48 Q 248,54 242,48
+               L 78,48 Q 72,54 66,48 Q 54,50 40,60 Z" />
+          {/* Windshield glass (front trapezoid) */}
           <path fill={CAR.glass} stroke={s} strokeWidth="1"
-            d="M96 74 L108 54 L212 54 L224 74 Z" />
-          {/* Cabin roof */}
-          <rect fill={CAR.trim} stroke={s} strokeWidth="1" x="96" y="74" width="128" height="38" rx="2" />
-          {/* Rear glass from above */}
+            d="M 40,60 L 40,120 L 82,132 L 82,48 Z" />
+          {/* Cabin roof panel */}
+          <rect fill={CAR.roof} stroke={s} strokeWidth="1" x="82" y="48" width="156" height="84" />
+          {/* Rear glass trapezoid */}
           <path fill={CAR.glass} stroke={s} strokeWidth="1"
-            d="M96 112 L108 132 L212 132 L224 112 Z" />
-          {/* Hood crease */}
-          <line stroke={s} strokeWidth="1" x1="110" y1="44" x2="210" y2="44" />
-          {/* Trunk crease */}
-          <line stroke={s} strokeWidth="1" x1="110" y1="146" x2="210" y2="146" />
+            d="M 238,48 L 238,132 L 280,122 L 280,58 Z" />
+          {/* B-pillar */}
+          <line stroke={s} strokeWidth="1.5" x1="160" y1="48" x2="160" y2="132" />
           {/* Mirrors */}
-          <rect fill={CAR.trim} stroke={s} strokeWidth="0.8" x="84" y="66" width="14" height="8" rx="2" />
-          <rect fill={CAR.trim} stroke={s} strokeWidth="0.8" x="222" y="66" width="14" height="8" rx="2" />
+          <rect fill={CAR.trim} stroke={s} strokeWidth="0.8" x="72" y="34" width="22" height="14" rx="3" />
+          <rect fill={CAR.trim} stroke={s} strokeWidth="0.8" x="72" y="132" width="22" height="14" rx="3" />
+          {/* Wheels (4 corners, seen from above as short ellipses) */}
+          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="66" cy="62" rx="16" ry="9" />
+          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="66" cy="118" rx="16" ry="9" />
+          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="254" cy="62" rx="16" ry="9" />
+          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="254" cy="118" rx="16" ry="9" />
         </>}
 
-        {/* ── SIDE VIEW ── left=normal, right=mirrored */}
+        {/* ── SIDE VIEW ── left = normal, right = mirrored */}
         {(view === "left" || view === "right") && <>
           <g transform={view === "right" ? "translate(320,0) scale(-1,1)" : undefined}>
-            {/* Body — ground at y=152, wheel arches cut in via cubic bezier */}
+            {/* Body — ground y=170, wheel arch cubic beziers peak at y=135 (wheel top) */}
             <path fill={CAR.body} stroke={s} strokeWidth={sw}
-              d="M18 148 L18 114 Q24 88 52 80 L78 52
-                 Q92 30 112 28 L196 28
-                 Q228 30 248 56 L262 82
-                 Q272 108 272 126 L290 126
-                 Q294 148 282 152
-                 L254 152
-                 C 254 93 202 93 202 152
-                 L114 152
-                 C 114 93 62 93 62 152
-                 Z" />
+              d="M 18,170 L 14,158 Q 12,142 16,128 Q 20,112 34,102
+                 L 56,84 Q 78,62 98,56 L 110,42 Q 122,38 134,38
+                 L 210,38 Q 224,38 234,52 L 254,76
+                 Q 262,92 266,110 L 270,130 Q 274,150 278,162 L 282,170
+                 L 263,170 C 263,135 229,135 229,170
+                 L 94,170 C 94,135 60,135 60,170 Z" />
             {/* Windshield glass */}
             <path fill={CAR.glass} stroke={s} strokeWidth="1"
-              d="M78 52 Q92 30 112 28 L112 82 Q96 84 78 96 Z" />
+              d="M 98,80 L 110,42 Q 122,38 134,38 L 134,80 Z" />
             {/* Front door glass */}
-            <rect fill={CAR.glass} stroke={s} strokeWidth="1" x="112" y="28" width="42" height="54" rx="2" />
+            <rect fill={CAR.glass} stroke={s} strokeWidth="1" x="134" y="38" width="38" height="42" rx="1" />
             {/* B-pillar */}
-            <rect fill={CAR.trim} stroke={s} strokeWidth="1" x="154" y="28" width="7" height="54" />
+            <rect fill={CAR.trim} stroke={s} strokeWidth="0.8" x="172" y="38" width="6" height="42" />
             {/* Rear door glass */}
-            <rect fill={CAR.glass} stroke={s} strokeWidth="1" x="161" y="28" width="35" height="54" rx="2" />
-            {/* Rear glass */}
+            <rect fill={CAR.glass} stroke={s} strokeWidth="1" x="178" y="38" width="32" height="42" rx="1" />
+            {/* Rear glass (C-pillar triangle) */}
             <path fill={CAR.glass} stroke={s} strokeWidth="1"
-              d="M196 28 Q228 30 248 56 L243 82 L196 82 Z" />
+              d="M 210,38 Q 224,38 234,52 L 252,80 L 210,80 Z" />
             {/* Belt line */}
-            <line stroke={s} strokeWidth="1" x1="78" y1="96" x2="245" y2="82" />
+            <line stroke={s} strokeWidth="0.8" x1="98" y1="80" x2="252" y2="80" />
+            {/* Door gap below belt */}
+            <line stroke={s} strokeWidth="0.7" x1="175" y1="80" x2="175" y2="134" />
+            {/* Rocker panel */}
+            <line stroke={s} strokeWidth="0.8" x1="48" y1="134" x2="262" y2="134" />
             {/* Door handles */}
-            <rect fill={CAR.hub} stroke={s} strokeWidth="0.8" x="126" y="114" width="20" height="7" rx="3" />
-            <rect fill={CAR.hub} stroke={s} strokeWidth="0.8" x="165" y="114" width="20" height="7" rx="3" />
+            <rect fill="#ffffff" stroke={s} strokeWidth="0.7" x="147" y="108" width="18" height="5" rx="2" />
+            <rect fill="#ffffff" stroke={s} strokeWidth="0.7" x="191" y="108" width="18" height="5" rx="2" />
             {/* Front wheel */}
-            <circle fill={CAR.wheel} stroke={s} strokeWidth={sw} cx="88" cy="130" r="22" />
-            <circle fill={CAR.trim} stroke={s} strokeWidth="1" cx="88" cy="130" r="11" />
-            <circle fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="88" cy="130" r="4" />
+            <circle fill={CAR.wheel} stroke={s} strokeWidth={sw} cx="77"  cy="152" r="17" />
+            <circle fill={CAR.hub}   stroke={s} strokeWidth="1"   cx="77"  cy="152" r="8" />
+            <circle fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="77"  cy="152" r="3" />
             {/* Rear wheel */}
-            <circle fill={CAR.wheel} stroke={s} strokeWidth={sw} cx="228" cy="130" r="22" />
-            <circle fill={CAR.trim} stroke={s} strokeWidth="1" cx="228" cy="130" r="11" />
-            <circle fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="228" cy="130" r="4" />
-            {/* Front bumper detail */}
-            <path fill={CAR.trim} stroke={s} strokeWidth="1"
-              d="M18 114 Q18 130 22 138 L40 138 Q36 118 36 108 Z" />
-            {/* Rear bumper detail */}
-            <path fill={CAR.trim} stroke={s} strokeWidth="1"
-              d="M272 126 L288 126 Q294 138 290 148 L278 148 Q274 138 272 128 Z" />
-            {/* Rocker panel line */}
-            <line stroke={s} strokeWidth="0.8" x1="40" y1="128" x2="270" y2="128" />
+            <circle fill={CAR.wheel} stroke={s} strokeWidth={sw} cx="246" cy="152" r="17" />
+            <circle fill={CAR.hub}   stroke={s} strokeWidth="1"   cx="246" cy="152" r="8" />
+            <circle fill={CAR.wheel} stroke={s} strokeWidth="0.8" cx="246" cy="152" r="3" />
           </g>
         </>}
 
-        {/* ── FRONT VIEW ── head-on, car facing the viewer */}
+        {/* ── FRONT VIEW ── head-on */}
         {view === "front" && <>
-          {/* Main body */}
+          {/* Body silhouette */}
           <path fill={CAR.body} stroke={s} strokeWidth={sw}
-            d="M80 155 L80 98 Q82 66 98 56 L116 46 Q138 30 160 28
-               Q182 30 204 46 L222 56 Q238 66 240 98
-               L240 155 Z" />
-          {/* Hood panel (top of body, above headlights) */}
+            d="M 82,162 L 80,110 Q 82,72 98,60 L 116,48 Q 138,36 160,34
+               Q 182,36 204,48 L 222,60 Q 238,72 240,110 L 238,162 Z" />
+          {/* Hood / upper nose panel */}
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M98 56 L116 46 Q138 30 160 28 Q182 30 204 46 L222 56
-               L212 68 Q160 74 108 68 Z" />
+            d="M 98,60 L 116,48 Q 138,36 160,34 Q 182,36 204,48 L 222,60
+               L 214,72 Q 188,80 160,80 Q 132,80 106,72 Z" />
           {/* Windshield */}
           <path fill={CAR.glass} stroke={s} strokeWidth="1"
-            d="M108 68 Q116 62 132 60 L188 60 Q204 62 212 68
-               L212 104 Q188 110 160 110 Q132 110 108 104 Z" />
-          {/* Left headlight cluster */}
+            d="M 106,72 Q 132,80 160,80 Q 188,80 214,72
+               L 214,110 Q 190,116 160,116 Q 130,116 106,110 Z" />
+          {/* Left headlight housing */}
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M80 98 L80 122 Q82 130 90 132 L114 132 Q120 130 120 122 L120 100
-               Q106 95 80 98 Z" />
+            d="M 80,100 L 80,128 Q 82,136 92,138 L 114,138
+               Q 122,136 122,128 L 122,100 Q 106,94 80,100 Z" />
           <path fill={CAR.glass} stroke={s} strokeWidth="0.8"
-            d="M84 102 L84 120 Q86 126 92 128 L114 128 L116 122 L116 104
-               Q104 99 84 102 Z" />
-          {/* Right headlight cluster */}
+            d="M 84,104 L 84,126 Q 86,130 94,132 L 112,132
+               L 118,126 L 118,104 Q 104,100 84,104 Z" />
+          {/* Right headlight housing */}
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M240 98 L240 122 Q238 130 230 132 L206 132 Q200 130 200 122 L200 100
-               Q214 95 240 98 Z" />
+            d="M 240,100 L 240,128 Q 238,136 228,138 L 206,138
+               Q 198,136 198,128 L 198,100 Q 214,94 240,100 Z" />
           <path fill={CAR.glass} stroke={s} strokeWidth="0.8"
-            d="M236 102 L236 120 Q234 126 228 128 L206 128 L204 122 L204 104
-               Q216 99 236 102 Z" />
-          {/* Grille opening */}
+            d="M 236,104 L 236,126 Q 234,130 226,132 L 208,132
+               L 202,126 L 202,104 Q 216,100 236,104 Z" />
+          {/* Grille */}
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M120 114 L136 110 L184 110 L200 114 L196 134 Q160 140 124 134 Z" />
-          {/* Grille slats */}
-          <line stroke={s} strokeWidth="0.6" x1="126" y1="122" x2="194" y2="122" />
-          <line stroke={s} strokeWidth="0.6" x1="124" y1="130" x2="196" y2="130" />
-          <line stroke={s} strokeWidth="0.6" x1="160" y1="110" x2="160" y2="138" />
-          <line stroke={s} strokeWidth="0.6" x1="145" y1="110" x2="143" y2="136" />
-          <line stroke={s} strokeWidth="0.6" x1="175" y1="110" x2="177" y2="136" />
-          {/* Bumper bar */}
+            d="M 124,118 L 136,114 L 184,114 L 196,118 L 194,138
+               Q 160,144 126,138 Z" />
+          <line stroke={s} strokeWidth="0.6" x1="128" y1="125" x2="192" y2="125" />
+          <line stroke={s} strokeWidth="0.6" x1="126" y1="133" x2="194" y2="133" />
+          <line stroke={s} strokeWidth="0.6" x1="160" y1="114" x2="160" y2="140" />
+          {/* Bumper */}
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M80 142 L80 155 Q84 164 100 166 L220 166 Q236 164 240 155 L240 142 Z" />
+            d="M 82,148 L 80,162 Q 84,170 102,172 L 218,172
+               Q 236,170 240,162 L 238,148 Z" />
           {/* License plate */}
-          <rect fill={CAR.hub} stroke={s} strokeWidth="0.8" x="140" y="148" width="40" height="14" rx="2" />
+          <rect fill={CAR.hub} stroke={s} strokeWidth="0.7" x="140" y="152" width="40" height="14" rx="2" />
           {/* Mirrors */}
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M62 82 L80 80 L80 90 L64 92 Q60 90 62 82 Z" />
+            d="M 62,84 L 80,82 L 80,92 L 64,94 Q 58,92 62,84 Z" />
           <path fill={CAR.trim} stroke={s} strokeWidth="1"
-            d="M258 82 L240 80 L240 90 L256 92 Q260 90 258 82 Z" />
-          {/* Wheel arches at bottom */}
+            d="M 258,84 L 240,82 L 240,92 L 256,94 Q 262,92 258,84 Z" />
+          {/* Wheel arches + frontal tyres */}
           <path fill={CAR.wheel} stroke={s} strokeWidth="1"
-            d="M80 148 Q80 168 100 170 L118 170 Q96 162 88 148 Z" />
+            d="M 82,150 Q 82,172 104,174 L 122,174 Q 100,164 92,150 Z" />
           <path fill={CAR.wheel} stroke={s} strokeWidth="1"
-            d="M240 148 Q240 168 220 170 L202 170 Q224 162 232 148 Z" />
-          {/* Wheel centres visible behind arches */}
-          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="1" cx="108" cy="168" rx="24" ry="8" />
-          <ellipse fill={CAR.hub} stroke={s} strokeWidth="0.8" cx="108" cy="168" rx="12" ry="4" />
-          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="1" cx="212" cy="168" rx="24" ry="8" />
-          <ellipse fill={CAR.hub} stroke={s} strokeWidth="0.8" cx="212" cy="168" rx="12" ry="4" />
+            d="M 238,150 Q 238,172 216,174 L 198,174 Q 220,164 228,150 Z" />
+          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="1"   cx="108" cy="172" rx="26" ry="8" />
+          <ellipse fill={CAR.hub}   stroke={s} strokeWidth="0.8" cx="108" cy="172" rx="13" ry="4" />
+          <ellipse fill={CAR.wheel} stroke={s} strokeWidth="1"   cx="212" cy="172" rx="26" ry="8" />
+          <ellipse fill={CAR.hub}   stroke={s} strokeWidth="0.8" cx="212" cy="172" rx="13" ry="4" />
         </>}
 
       </svg>
