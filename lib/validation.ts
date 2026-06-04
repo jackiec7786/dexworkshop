@@ -55,6 +55,7 @@ export const jobPatchSchema = z
     tax_rate: z.number(),
     deposit: z.number(),
     photos: z.array(photoSchema),
+    scheduled_date: z.string().nullable(),
   })
   .partial();
 export type JobPatch = z.infer<typeof jobPatchSchema>;

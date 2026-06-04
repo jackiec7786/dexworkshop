@@ -7,21 +7,21 @@ import {
 // Design tokens — the single source of truth for the app's visual language.
 // ---------------------------------------------------------------------------
 export const tokens = {
-  bg: "#0c0d0f",
-  surface: "#131519",
-  surfaceAlt: "#16181c",
-  surfaceHi: "#1c1f25",
-  border: "#1f2228",
-  borderHi: "#2a2e35",
-  text: "#e9ecef",
-  muted: "#9aa0a6",
-  faint: "#7a818b",
+  bg: "#f5f5f5",
+  surface: "#ffffff",
+  surfaceAlt: "#f9fafb",
+  surfaceHi: "#f3f4f6",
+  border: "#e5e7eb",
+  borderHi: "#d1d5db",
+  text: "#111827",
+  muted: "#6b7280",
+  faint: "#9ca3af",
   accent: "#ff6a2b",
-  success: "#4fd97a",
-  info: "#4fc3ff",
-  warn: "#ffd24f",
-  danger: "#ff8080",
-  dangerBg: "#2a1416",
+  success: "#16a34a",
+  info: "#0369a1",
+  warn: "#b45309",
+  danger: "#dc2626",
+  dangerBg: "#fef2f2",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -29,8 +29,8 @@ export const tokens = {
 // ---------------------------------------------------------------------------
 type BtnVariant = "primary" | "default" | "danger" | "ghost";
 const btnStyles: Record<BtnVariant, CSSProperties> = {
-  primary: { background: tokens.accent, color: "#0c0d0f" },
-  default: { background: tokens.borderHi, color: tokens.text },
+  primary: { background: tokens.accent, color: "#ffffff" },
+  default: { background: tokens.surfaceHi, color: tokens.text },
   danger: { background: tokens.dangerBg, color: tokens.danger },
   ghost: { background: "transparent", color: tokens.muted },
 };
@@ -132,9 +132,12 @@ export function Providers({ children }: { children: ReactNode }) {
         }}>
           {toasts.map((t) => (
             <div key={t.id} role="status" style={{
-              background: tokens.surface, border: `1px solid ${tokens.borderHi}`,
-              borderLeft: `3px solid ${toastColor[t.kind]}`, color: tokens.text, padding: "11px 14px",
-              borderRadius: 8, fontSize: 13, boxShadow: "0 8px 24px rgba(0,0,0,.4)",
+              background: tokens.surface,
+              border: `1px solid ${tokens.border}`,
+              borderLeft: `3px solid ${toastColor[t.kind]}`,
+              color: tokens.text, padding: "11px 14px",
+              borderRadius: 8, fontSize: 13,
+              boxShadow: "0 4px 16px rgba(0,0,0,.10)",
               animation: "dex-toast-in .18s ease",
             }}>
               {t.message}
@@ -145,14 +148,17 @@ export function Providers({ children }: { children: ReactNode }) {
         {/* Confirm modal */}
         {confirmState && (
           <div className="noprint" onClick={() => closeConfirm(false)} style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", display: "grid",
+            position: "fixed", inset: 0, background: "rgba(0,0,0,.35)", display: "grid",
             placeItems: "center", zIndex: 110,
           }}>
             <div onClick={(e) => e.stopPropagation()} style={{
               background: tokens.surface, padding: 24, borderRadius: 12, width: 400, maxWidth: "90vw",
-              border: `1px solid ${tokens.borderHi}`,
+              border: `1px solid ${tokens.border}`,
+              boxShadow: "0 8px 32px rgba(0,0,0,.12)",
             }}>
-              <h3 className="disp" style={{ margin: 0, fontSize: 18, letterSpacing: 0.5 }}>{confirmState.title}</h3>
+              <h3 className="disp" style={{ margin: 0, fontSize: 18, letterSpacing: 0.5, color: tokens.text }}>
+                {confirmState.title}
+              </h3>
               {confirmState.message && (
                 <p style={{ color: tokens.muted, fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>
                   {confirmState.message}

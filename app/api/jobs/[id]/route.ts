@@ -16,6 +16,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   const b = parsed.data;
 
+  // Main update — deliberately excludes scheduled_date so this query works even
+  // if the Phase 2 migration (ALTER TABLE jobs ADD COLUMN scheduled_date DATE)
+  // has not been run yet.
   const rows = await sql`
     UPDATE jobs SET
       status     = COALESCE(${b.status     ?? null}, status),
@@ -32,7 +35,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     RETURNING *
   `;
   if (!rows[0]) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json(rows[0]);
+
+  // scheduled_date — separate query so a missing column never blocks the main save.
+  let result = rows[0];
+  if (b.scheduled_date !== undefined) {
+    try {
+      const sched = b.scheduled_date || null; // "" → null (unschedule)
+      const sr = await sql`
+        UPDATE jobs SET scheduled_date = ${sched}
+        WHERE id = ${id} AND owner = ${SHOP_OWNER}
+        RETURNING *`;
+      if (sr[0]) result = sr[0];
+    } catch { /* Phase 2 migration not yet applied — safe to skip */ }
+  }
+
+  return NextResponse.json(result);
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
