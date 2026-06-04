@@ -114,7 +114,11 @@ export default function Dashboard() {
         }),
       });
       if (res.status === 401) onAuthError();
-      else if (!res.ok) toast("Couldn't save changes.", "error");
+      else if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        console.error("Save failed:", res.status, detail);
+        toast("Couldn't save changes.", "error");
+      }
     }, 600);
   }, [onAuthError, toast]);
 

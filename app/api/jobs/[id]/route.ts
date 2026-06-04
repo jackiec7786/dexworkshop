@@ -10,30 +10,38 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const parsed = jobPatchSchema.safeParse(await req.json().catch(() => null));
+  const body = await req.json().catch(() => null);
+  const parsed = jobPatchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
+    console.error("[PATCH /api/jobs/%s] validation failed:", id, JSON.stringify(parsed.error.issues));
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input.", issues: parsed.error.issues }, { status: 400 });
   }
   const b = parsed.data;
 
   // Main update — deliberately excludes scheduled_date so this query works even
   // if the Phase 2 migration (ALTER TABLE jobs ADD COLUMN scheduled_date DATE)
   // has not been run yet.
-  const rows = await sql`
-    UPDATE jobs SET
-      status     = COALESCE(${b.status     ?? null}, status),
-      customer   = COALESCE(${b.customer   != null ? JSON.stringify(b.customer)   : null}::jsonb, customer),
-      vehicle    = COALESCE(${b.vehicle    != null ? JSON.stringify(b.vehicle)    : null}::jsonb, vehicle),
-      marks      = COALESCE(${b.marks      != null ? JSON.stringify(b.marks)      : null}::jsonb, marks),
-      line_items = COALESCE(${b.line_items != null ? JSON.stringify(b.line_items) : null}::jsonb, line_items),
-      notes      = COALESCE(${b.notes      ?? null}, notes),
-      discount   = COALESCE(${b.discount   ?? null}, discount),
-      tax_rate   = COALESCE(${b.tax_rate   ?? null}, tax_rate),
-      deposit    = COALESCE(${b.deposit    ?? null}, deposit),
-      photos     = COALESCE(${b.photos     != null ? JSON.stringify(b.photos)     : null}::jsonb, photos)
-    WHERE id = ${id} AND owner = ${SHOP_OWNER}
-    RETURNING *
-  `;
+  let rows: Awaited<ReturnType<typeof sql>>;
+  try {
+    rows = await sql`
+      UPDATE jobs SET
+        status     = COALESCE(${b.status     ?? null}, status),
+        customer   = COALESCE(${b.customer   != null ? JSON.stringify(b.customer)   : null}::jsonb, customer),
+        vehicle    = COALESCE(${b.vehicle    != null ? JSON.stringify(b.vehicle)    : null}::jsonb, vehicle),
+        marks      = COALESCE(${b.marks      != null ? JSON.stringify(b.marks)      : null}::jsonb, marks),
+        line_items = COALESCE(${b.line_items != null ? JSON.stringify(b.line_items) : null}::jsonb, line_items),
+        notes      = COALESCE(${b.notes      ?? null}, notes),
+        discount   = COALESCE(${b.discount   ?? null}, discount),
+        tax_rate   = COALESCE(${b.tax_rate   ?? null}, tax_rate),
+        deposit    = COALESCE(${b.deposit    ?? null}, deposit),
+        photos     = COALESCE(${b.photos     != null ? JSON.stringify(b.photos)     : null}::jsonb, photos)
+      WHERE id = ${id} AND owner = ${SHOP_OWNER}
+      RETURNING *
+    `;
+  } catch (err) {
+    console.error("[PATCH /api/jobs/%s] DB error:", id, err);
+    return NextResponse.json({ error: "Database error." }, { status: 500 });
+  }
   if (!rows[0]) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   // scheduled_date — separate query so a missing column never blocks the main save.

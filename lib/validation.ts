@@ -10,20 +10,20 @@ export type Credentials = z.infer<typeof credentialsSchema>;
 // ---- Domain pieces ----
 const markSchema = z.object({
   id: z.string(),
-  x: z.number(),
-  y: z.number(),
+  x: z.coerce.number(),
+  y: z.coerce.number(),
   view: z.string(),
   type: z.string(),
   note: z.string().default(""),
-  sqin: z.number().optional(),
+  sqin: z.coerce.number().optional(),
 });
 
 const lineItemSchema = z.object({
   id: z.string(),
   desc: z.string().default(""),
   type: z.string(),
-  qty: z.number(),
-  price: z.number(),
+  qty: z.coerce.number(),
+  price: z.coerce.number(),
 });
 
 const photoSchema = z.object({
@@ -50,10 +50,10 @@ export const jobPatchSchema = z
     }),
     marks: z.array(markSchema),
     line_items: z.array(lineItemSchema),
-    notes: z.string(),
-    discount: z.number(),
-    tax_rate: z.number(),
-    deposit: z.number(),
+    notes: z.string().nullish().transform((v) => v ?? ""),
+    discount: z.coerce.number(),
+    tax_rate: z.coerce.number(),
+    deposit: z.coerce.number(),
     photos: z.array(photoSchema),
     scheduled_date: z.string().nullable(),
   })
