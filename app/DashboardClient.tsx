@@ -519,7 +519,7 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Mobile: status + delete row */}
+                {/* Mobile: status row */}
                 {isMobile && (
                   <div className="noprint"
                     style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
@@ -528,7 +528,6 @@ export default function Dashboard() {
                       style={{ ...fld, flex: 1, width: "auto" }}>
                       <option>Quote</option><option>Invoice</option><option>Paid</option>
                     </select>
-                    <button style={btn("#fef2f2", "#dc2626")} onClick={() => deleteJob(active.id)}>Delete</button>
                   </div>
                 )}
 
@@ -777,6 +776,16 @@ export default function Dashboard() {
                       )}
                     </div>
                   </>
+                )}
+
+                {/* Delete — bottom of form, away from accidental taps */}
+                {isMobile && (
+                  <div className="noprint" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
+                    <button style={{ ...btn("#fef2f2", "#dc2626"), width: "100%", padding: 12 }}
+                      onClick={() => deleteJob(active.id)}>
+                      Delete Job
+                    </button>
+                  </div>
                 )}
 
                 {/* Quote preview — visible on screen only when on the quote tab */}
