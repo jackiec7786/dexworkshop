@@ -1119,7 +1119,7 @@ function AccountingSection({
                     onChange={(e) => setExpForm({ ...expForm, supplier: e.target.value })} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 2fr", gap: 8, marginBottom: 10 }}>
                 <div>
                   <label style={lbl}>Amount ({cur})</label>
                   <input type="number" style={fld} value={expForm.amount} placeholder="0"
@@ -1130,7 +1130,7 @@ function AccountingSection({
                   <input type="number" style={fld} value={expForm.gst} placeholder="0"
                     onChange={(e) => setExpForm({ ...expForm, gst: e.target.value })} />
                 </div>
-                <div>
+                <div style={isMobile ? { gridColumn: "1 / -1" } : {}}>
                   <label style={lbl}>Note</label>
                   <input style={fld} value={expForm.note} placeholder="Optional note"
                     onChange={(e) => setExpForm({ ...expForm, note: e.target.value })} />
@@ -1909,7 +1909,7 @@ function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggle
         </div>
 
         {/* Quick stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 10 }}>
           {[
             { label: "Total Revenue", value: pkr(selected.totalRevenue), color: tokens.success },
             { label: "Jobs", value: String(selected.jobs.length), color: tokens.text },

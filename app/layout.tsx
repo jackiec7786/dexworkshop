@@ -22,7 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <style>{`
           * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
-          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827; }
+          html { overflow-x: hidden; }
+          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827;
+            overflow-x: hidden; width: 100%; }
           input:focus,textarea:focus,select:focus { outline:none; border-color:#ff6a2b !important; }
           button:hover:not(:disabled) { filter:brightness(0.95); }
           button:active:not(:disabled) { filter:brightness(0.90); }
@@ -90,7 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }
 
             /* Main: tighter padding, room for bottom nav */
-            .main-pane { padding: 12px 12px 80px; }
+            .main-pane { padding: 12px 12px 80px; overflow-x: hidden; }
 
             /* Grids collapse to one column */
             .cols-3 { grid-template-columns: 1fr; }
