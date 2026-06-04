@@ -779,8 +779,17 @@ export default function Dashboard() {
                   </>
                 )}
 
-                {/* Single PrintDoc — always in DOM, mode tracks active tab so #printable is always correct */}
-                <PrintDoc job={active} settings={settings} mode={tab === "quote" ? "quote" : "inspection"} />
+                {/* Quote preview — visible on screen only when on the quote tab */}
+                {tab === "quote" && (
+                  <PrintDoc job={active} settings={settings} mode="quote" />
+                )}
+
+                {/* Inspection sheet — always in DOM for printing, hidden from screen */}
+                {tab !== "quote" && (
+                  <div style={{ height: 0, overflow: "hidden" }}>
+                    <PrintDoc job={active} settings={settings} mode="inspection" />
+                  </div>
+                )}
               </>
             )}
           </main>
