@@ -224,6 +224,17 @@ export default function Dashboard() {
     });
   }, []);
 
+  // ─── Print helpers ────────────────────────────────────────────────────────
+  const printInspection = useCallback(() => {
+    setTab("inspection");
+    setTimeout(() => window.print(), 80);
+  }, []);
+
+  const printQuote = useCallback(() => {
+    setTab("quote");
+    setTimeout(() => window.print(), 80);
+  }, []);
+
   // ─── Expense CRUD ─────────────────────────────────────────────────────────
   const saveExpense = async () => {
     if (!expForm) return;
@@ -500,8 +511,9 @@ export default function Dashboard() {
                       style={{ ...fld, width: "auto" }}>
                       <option>Quote</option><option>Invoice</option><option>Paid</option>
                     </select>
-                    <button style={btn()} onClick={() => { setTab("quote"); setTimeout(() => window.print(), 80); }}>
-                      🖨 Print
+                    <button style={btn()} onClick={printInspection}>🖨 Inspection</button>
+                    <button style={btn()} onClick={printQuote}>
+                      🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                     </button>
                     <button style={btn("#fef2f2", "#dc2626")} onClick={() => deleteJob(active.id)}>Delete</button>
                   </div>
@@ -666,6 +678,13 @@ export default function Dashboard() {
                         onChange={(e) => updateActive((j) => ({ ...j, notes: e.target.value }))}
                         placeholder="Pre-existing damage, customer concerns, overall condition…" />
                     </Section>
+
+                    {isMobile && (
+                      <button style={{ ...btn(), width: "100%", padding: 14, marginBottom: 16, fontSize: 14 }}
+                        onClick={printInspection}>
+                        🖨 Print Inspection Sheet
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -752,15 +771,16 @@ export default function Dashboard() {
 
                       {isMobile && (
                         <button style={{ ...btn(), width: "100%", padding: 14, marginBottom: 16, fontSize: 14 }}
-                          onClick={() => setTimeout(() => window.print(), 80)}>
-                          🖨 Print / Save PDF
+                          onClick={printQuote}>
+                          🖨 Print {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                         </button>
                       )}
                     </div>
-
-                    <PrintDoc job={active} settings={settings} />
                   </>
                 )}
+
+                {/* Single PrintDoc — always in DOM, mode tracks active tab so #printable is always correct */}
+                <PrintDoc job={active} settings={settings} mode={tab === "quote" ? "quote" : "inspection"} />
               </>
             )}
           </main>
@@ -775,7 +795,7 @@ export default function Dashboard() {
             { label: "Jobs", icon: "←", onClick: () => setActiveId(null), isActive: false },
             { label: "Inspect", icon: "◎", onClick: () => setTab("inspection"), isActive: tab === "inspection" },
             { label: "Quote", icon: "⊟", onClick: () => setTab("quote"), isActive: tab === "quote" },
-            { label: "Print", icon: "🖨", onClick: () => { setTab("quote"); setTimeout(() => window.print(), 80); }, isActive: false },
+            { label: "Print", icon: "🖨", onClick: () => tab === "inspection" ? printInspection() : printQuote(), isActive: false },
           ].map(({ label, icon, onClick, isActive }) => (
             <button key={label} onClick={onClick}
               style={{ flex: 1, background: "transparent", border: "none",

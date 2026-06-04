@@ -62,9 +62,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           /* ── Print ── */
           @media print {
+            @page { margin: 14mm 16mm; size: A4; }
             body * { visibility:hidden; }
             #printable, #printable * { visibility:visible; }
-            #printable { position:absolute; left:0; top:0; width:100%; background:#fff; color:#000; }
+            #printable { position:absolute; left:0; top:0; width:100%; background:#fff; color:#000;
+              -webkit-print-color-adjust:exact; print-color-adjust:exact; }
             .noprint { display:none !important; }
           }
 
