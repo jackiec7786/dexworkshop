@@ -307,69 +307,124 @@ export default function Dashboard() {
   const statusColor: Record<string, string> = { Quote: tokens.info, Invoice: tokens.warn, Paid: tokens.success };
 
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+
+      {/* ── Desktop left nav ── */}
+      {!isMobile && (
+        <nav className="dsk-nav noprint">
+          <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/dex-logo.png" alt="DEX" style={{ height: 26, objectFit: "contain" }} />
+          </div>
+          <div style={{ flex: 1, paddingTop: 8 }}>
+            {([
+              { label: "Jobs", icon: "🏠", isActive: !anySection,
+                badge: 0,
+                onClick: () => { setActiveId(null); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); } },
+              { label: "Calendar", icon: "📅", isActive: showCalendar, badge: 0,
+                onClick: () => { const n = !showCalendar; setShowCalendar(n); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
+              { label: "Pipeline", icon: "⋮⋮", isActive: showPipeline, badge: 0,
+                onClick: () => { const n = !showPipeline; setShowPipeline(n); setShowCalendar(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
+              { label: "Customers", icon: "👥", isActive: showCustomers, badge: 0,
+                onClick: () => { const n = !showCustomers; setShowCustomers(n); setShowCalendar(false); setShowPipeline(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
+              { label: "Inventory", icon: "📦", isActive: showInventory,
+                badge: inventory.filter((i) => i.stock <= i.reorder_at && i.reorder_at > 0).length,
+                onClick: () => { const n = !showInventory; setShowInventory(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowAccounting(false); if (n) setActiveId(null); } },
+              { label: "Finance", icon: "₨", isActive: showAccounting, badge: 0,
+                onClick: () => { const n = !showAccounting; setShowAccounting(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); if (n) setActiveId(null); } },
+            ] as { label: string; icon: string; isActive: boolean; onClick: () => void; badge: number }[]).map(
+              ({ label, icon, isActive, onClick, badge }) => (
+                <button key={label} onClick={onClick} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 16px", width: "100%",
+                  background: isActive ? "rgba(255,106,43,0.13)" : "transparent",
+                  color: isActive ? "#ff6a2b" : "#9ca3af",
+                  border: "none", borderLeft: `3px solid ${isActive ? "#ff6a2b" : "transparent"}`,
+                  cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                  letterSpacing: 0.3, textAlign: "left",
+                }}>
+                  <span style={{ width: 18, textAlign: "center", flexShrink: 0 }}>{icon}</span>
+                  <span style={{ flex: 1 }}>{label}</span>
+                  {badge > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10,
+                    padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>{badge}</span>}
+                </button>
+              )
+            )}
+          </div>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 4 }}>
+            <button onClick={() => setShowSettings(true)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 16px", width: "100%", background: "transparent",
+              color: "#9ca3af", border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+            }}>
+              <span style={{ width: 18, textAlign: "center" }}>⚙</span>
+              Settings
+            </button>
+            <button onClick={signOut} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 16px", width: "100%", background: "transparent",
+              color: "#9ca3af", border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+            }}>
+              <span style={{ width: 18, textAlign: "center" }}>→</span>
+              Sign out
+            </button>
+            {userEmail && (
+              <div style={{ padding: "4px 16px 12px", fontSize: 11, color: "#4b5563",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userEmail}
+              </div>
+            )}
+          </div>
+        </nav>
+      )}
+
+      {/* ── Content area ── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
       {/* ─── Header ─── */}
       <header className="noprint" style={hdrStyle}>
-        {/* Back arrow: desktop only, when a job is open */}
-        {!isMobile && activeId && (
-          <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
-            onClick={() => setActiveId(null)} aria-label="Back to jobs list">←</button>
-        )}
-
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
-
-        {/* Mobile breadcrumb: active job customer name */}
-        {isMobile && active && !anySection && (
-          <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
-            textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
-            {active.customer.name
-              || [active.vehicle.year, active.vehicle.make].filter(Boolean).join(" ")
-              || "Unnamed"}
-          </span>
-        )}
-
-        <div style={{ flex: 1 }} />
-
-        {/* Desktop controls */}
-        {!isMobile && <>
-          {userEmail && <span style={{ fontSize: 12, color: tokens.faint }}>{userEmail}</span>}
-          {(["Calendar","Pipeline","Customers","Inventory","Finance"] as const).map((label) => {
-            const isActive = label === "Calendar" ? showCalendar
-              : label === "Pipeline" ? showPipeline
-              : label === "Customers" ? showCustomers
-              : label === "Inventory" ? showInventory
-              : showAccounting;
-            const icon = label === "Calendar" ? "📅 " : label === "Pipeline" ? "⋮⋮ "
-              : label === "Customers" ? "👥 " : label === "Inventory" ? "📦 " : "₨ ";
-            const lowStock = label === "Inventory"
-              ? inventory.filter((i) => i.stock <= i.reorder_at && i.reorder_at > 0).length : 0;
-            return (
-              <button key={label}
-                style={btn(isActive ? tokens.accent : undefined, isActive ? "#fff" : undefined)}
-                onClick={() => {
-                  const next = !isActive;
-                  setShowCalendar(label === "Calendar" ? next : false);
-                  setShowPipeline(label === "Pipeline" ? next : false);
-                  setShowCustomers(label === "Customers" ? next : false);
-                  setShowInventory(label === "Inventory" ? next : false);
-                  setShowAccounting(label === "Finance" ? next : false);
-                  if (next) setActiveId(null);
-                }}>
-                {icon}{label}{lowStock > 0 && <span style={{ marginLeft: 5, background: tokens.danger,
-                  color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10 }}>{lowStock}</span>}
-              </button>
-            );
-          })}
-          <button style={btn()} onClick={() => setShowSettings(true)}>⚙ Settings</button>
-          <button style={btn()} onClick={signOut}>Sign out</button>
-        </>}
-
-        {/* Mobile: settings icon only (section nav is in bottom tab bar) */}
+        {/* Mobile: logo + optional back + breadcrumb */}
         {isMobile && (
-          <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
-            onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
+          <>
+            {activeId && (
+              <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
+                onClick={() => setActiveId(null)} aria-label="Back">←</button>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
+            {active && !anySection && (
+              <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
+                textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
+                {active.customer.name
+                  || [active.vehicle.year, active.vehicle.make].filter(Boolean).join(" ")
+                  || "Unnamed"}
+              </span>
+            )}
+            <div style={{ flex: 1 }} />
+            <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
+              onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
+          </>
+        )}
+
+        {/* Desktop: back button + job title */}
+        {!isMobile && (
+          <>
+            {activeId && (
+              <button style={{ ...btn(), padding: "7px 12px", fontSize: 13, minHeight: 36 }}
+                onClick={() => setActiveId(null)}>← Jobs</button>
+            )}
+            {activeId && active && (
+              <span className="disp" style={{ fontSize: 15, letterSpacing: 0.5, fontWeight: 700,
+                color: tokens.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {active.customer.name
+                  || [active.vehicle.year, active.vehicle.make, active.vehicle.model].filter(Boolean).join(" ")
+                  || "Unnamed Job"}
+              </span>
+            )}
+            <div style={{ flex: 1 }} />
+          </>
         )}
 
         {!anySection && (
@@ -499,32 +554,44 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-                {/* Desktop: tab bar + status dropdown + print/delete */}
+                {/* Desktop: underline tabs + status/action row */}
                 {!isMobile && (
-                  <div className="noprint"
-                    style={{ display: "flex", gap: 8, marginBottom: 18, alignItems: "center", flexWrap: "wrap" }}>
-                    {(["inspection", "quote"] as const).map((t) => (
-                      <button key={t} onClick={() => setTab(t)}
-                        style={btn(tab === t ? tokens.accent : "#f3f4f6", tab === t ? "#ffffff" : "#6b7280")}>
-                        {t === "inspection" ? "Inspection" : "Quote / Invoice"}
+                  <div className="noprint" style={{ marginBottom: 20 }}>
+                    {/* Row 1: tabs */}
+                    <div style={{ display: "flex", borderBottom: `2px solid ${tokens.border}`, marginBottom: 14 }}>
+                      {(["inspection", "quote"] as const).map((t) => (
+                        <button key={t} onClick={() => setTab(t)} style={{
+                          background: "transparent", border: "none",
+                          borderBottom: `2px solid ${tab === t ? tokens.accent : "transparent"}`,
+                          color: tab === t ? tokens.accent : tokens.muted,
+                          padding: "8px 20px 10px", fontSize: 13,
+                          fontWeight: tab === t ? 700 : 500,
+                          cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
+                          marginBottom: -2,
+                        }}>
+                          {t === "inspection" ? "Inspection" : "Quote / Invoice"}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Row 2: status + actions */}
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <select value={active.status}
+                        onChange={(e) => updateActive((j) => ({ ...j, status: e.target.value as Job["status"] }))}
+                        style={{ ...fld, width: "auto", minWidth: 110, minHeight: 0 }}>
+                        <option>Quote</option><option>Invoice</option><option>Paid</option>
+                      </select>
+                      <div style={{ flex: 1 }} />
+                      <button style={{ ...btn(), fontSize: 12 }} onClick={printInspection}>🖨 Inspection</button>
+                      <button style={{ ...btn(), fontSize: 12 }} onClick={printQuote}>
+                        🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                       </button>
-                    ))}
-                    <div style={{ flex: 1 }} />
-                    <select value={active.status}
-                      onChange={(e) => updateActive((j) => ({ ...j, status: e.target.value as Job["status"] }))}
-                      style={{ ...fld, width: "auto" }}>
-                      <option>Quote</option><option>Invoice</option><option>Paid</option>
-                    </select>
-                    <button style={btn()} onClick={printInspection}>🖨 Inspection</button>
-                    <button style={btn()} onClick={printQuote}>
-                      🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
-                    </button>
-                    <button style={{ ...btn("#25d366", "#ffffff") }} onClick={() => {
-                      const url = `${window.location.origin}/q/${active.id}`;
-                      const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-                    }}>📲 WhatsApp</button>
-                    <button style={btn("#fef2f2", "#dc2626")} onClick={() => deleteJob(active.id)}>Delete</button>
+                      <button style={{ ...btn("#25d366", "#ffffff"), fontSize: 12 }} onClick={() => {
+                        const url = `${window.location.origin}/q/${active.id}`;
+                        const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                      }}>📲 WhatsApp</button>
+                      <button style={{ ...btn("#fef2f2", "#dc2626"), fontSize: 12 }} onClick={() => deleteJob(active.id)}>Delete</button>
+                    </div>
                   </div>
                 )}
 
@@ -938,6 +1005,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

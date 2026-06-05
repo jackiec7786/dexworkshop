@@ -34,10 +34,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           button:active:not(:disabled) { filter:brightness(0.90); }
           .disp { font-family:'Oswald',sans-serif; }
 
+          /* ── Desktop left nav ── */
+          .dsk-nav {
+            width: 210px;
+            flex-shrink: 0;
+            background: #18181b;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 20;
+          }
+          @media (max-width: 767px) { .dsk-nav { display: none !important; } }
+
           /* ── Responsive layout shell ── */
           .app-shell {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: 320px 1fr;
             min-height: calc(100vh - 56px);
           }
           .sidebar {
