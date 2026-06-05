@@ -576,23 +576,24 @@ export default function Dashboard() {
                       ))}
                     </div>
                     {/* Row 2: status + actions */}
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", rowGap: 8 }}>
                       <select value={active.status}
                         onChange={(e) => updateActive((j) => ({ ...j, status: e.target.value as Job["status"] }))}
                         style={{ ...fld, width: "auto", minWidth: 110, minHeight: 0 }}>
                         <option>Quote</option><option>Invoice</option><option>Paid</option>
                       </select>
-                      <div style={{ flex: 1 }} />
-                      <button style={{ ...btn(), fontSize: 12 }} onClick={printInspection}>🖨 Inspection</button>
-                      <button style={{ ...btn(), fontSize: 12 }} onClick={printQuote}>
-                        🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
-                      </button>
-                      <button style={{ ...btn("#25d366", "#ffffff"), fontSize: 12 }} onClick={() => {
-                        const url = `${window.location.origin}/q/${active.id}`;
-                        const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-                      }}>📲 WhatsApp</button>
-                      <button style={{ ...btn("#fef2f2", "#dc2626"), fontSize: 12 }} onClick={() => deleteJob(active.id)}>Delete</button>
+                      <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button style={{ ...btn(), fontSize: 12 }} onClick={printInspection}>🖨 Inspection</button>
+                        <button style={{ ...btn(), fontSize: 12 }} onClick={printQuote}>
+                          🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
+                        </button>
+                        <button style={{ ...btn("#25d366", "#ffffff"), fontSize: 12 }} onClick={() => {
+                          const url = `${window.location.origin}/q/${active.id}`;
+                          const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
+                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                        }}>📲 WhatsApp</button>
+                        <button style={{ ...btn("#fef2f2", "#dc2626"), fontSize: 12 }} onClick={() => deleteJob(active.id)}>Delete</button>
+                      </div>
                     </div>
                   </div>
                 )}

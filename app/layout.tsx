@@ -26,9 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <style>{`
           * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
-          html { overflow-x: hidden; }
-          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827;
-            overflow-x: hidden; width: 100%; }
+          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827; }
           input:focus,textarea:focus,select:focus { outline:none; border-color:#ff6a2b !important; }
           button:hover:not(:disabled) { filter:brightness(0.95); }
           button:active:not(:disabled) { filter:brightness(0.90); }
@@ -94,6 +92,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           /* ── Mobile styles ── */
           @media (max-width: 767px) {
+            html, body { overflow-x: hidden; width: 100%; }
+
             /* Single-column shell */
             .app-shell { grid-template-columns: 1fr; min-height: calc(100vh - 56px); }
 
