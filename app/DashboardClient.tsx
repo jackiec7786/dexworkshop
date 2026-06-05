@@ -39,7 +39,9 @@ export default function Dashboard() {
   const [activeType, setActiveType] = useState("DD");
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
