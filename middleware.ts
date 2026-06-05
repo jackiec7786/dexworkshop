@@ -6,8 +6,9 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Auth endpoints must stay reachable while logged out.
+  // Public routes — no auth required.
   if (pathname.startsWith("/api/auth")) return NextResponse.next();
+  if (pathname.startsWith("/q/") || pathname.startsWith("/api/public/")) return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySessionToken(token) : null;
@@ -32,5 +33,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|dex-logo.png).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|dex-logo.png|manifest.webmanifest|car-template.svg).*)"],
 };

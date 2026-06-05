@@ -299,6 +299,28 @@ export function PrintDoc({ job, settings, mode = "quote" }: {
           </div>
         )}
 
+        {/* Photos */}
+        {job.photos.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase",
+              color: "#444", marginBottom: 8 }}>Photos</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+              {job.photos.map((p, i) => (
+                <div key={p.url} style={{ breakInside: "avoid" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt={p.caption || `Photo ${i + 1}`}
+                    style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover",
+                      borderRadius: 4, border: "1px solid #e5e7eb", display: "block" }} />
+                  {p.caption && (
+                    <div style={{ fontSize: 10, color: "#555", marginTop: 3, textAlign: "center",
+                      lineHeight: 1.4 }}>{p.caption}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Signature boxes */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 28, marginTop: 36, fontSize: 12 }}>
           {["Customer Signature", "Technician / Estimator", "Date"].map((label) => (
@@ -404,6 +426,28 @@ export function PrintDoc({ job, settings, mode = "quote" }: {
       {job.notes && (
         <div style={{ marginTop: 16, fontSize: 12, color: "#555", lineHeight: 1.7 }}>
           <b>Notes:</b> {job.notes}
+        </div>
+      )}
+
+      {/* Photos */}
+      {job.photos.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase",
+            color: "#888", marginBottom: 8 }}>Photos</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {job.photos.map((p, i) => (
+              <div key={p.url} style={{ breakInside: "avoid" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt={p.caption || `Photo ${i + 1}`}
+                  style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover",
+                    borderRadius: 4, border: "1px solid #e5e7eb", display: "block" }} />
+                {p.caption && (
+                  <div style={{ fontSize: 10, color: "#555", marginTop: 3, textAlign: "center",
+                    lineHeight: 1.4 }}>{p.caption}</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

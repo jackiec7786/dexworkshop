@@ -519,6 +519,11 @@ export default function Dashboard() {
                     <button style={btn()} onClick={printQuote}>
                       🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                     </button>
+                    <button style={{ ...btn("#25d366", "#ffffff") }} onClick={() => {
+                      const url = `${window.location.origin}/q/${active.id}`;
+                      const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                    }}>📲 WhatsApp</button>
                     <button style={btn("#fef2f2", "#dc2626")} onClick={() => deleteJob(active.id)}>Delete</button>
                   </div>
                 )}
@@ -782,10 +787,20 @@ export default function Dashboard() {
                       </Section>
 
                       {isMobile && (
-                        <button style={{ ...btn(), width: "100%", padding: 14, marginBottom: 16, fontSize: 14 }}
-                          onClick={printQuote}>
-                          🖨 Print {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
-                        </button>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                          <button style={{ ...btn(), width: "100%", padding: 14, fontSize: 14 }}
+                            onClick={printQuote}>
+                            🖨 Print {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
+                          </button>
+                          <button style={{ ...btn("#25d366", "#ffffff"), width: "100%", padding: 14, fontSize: 14 }}
+                            onClick={() => {
+                              const url = `${window.location.origin}/q/${active.id}`;
+                              const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
+                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                            }}>
+                            📲 Share on WhatsApp
+                          </button>
+                        </div>
                       )}
                     </div>
                   </>
