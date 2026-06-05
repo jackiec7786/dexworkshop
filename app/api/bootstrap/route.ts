@@ -4,9 +4,17 @@ import { requireSession } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
+async function applyMigrations() {
+  await sql`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS scheduled_date DATE`;
+  await sql`CREATE INDEX IF NOT EXISTS jobs_scheduled_idx ON jobs(owner, scheduled_date)`;
+}
+
 export async function GET() {
   const auth = await requireSession();
   if (auth instanceof NextResponse) return auth;
+
+  // Idempotent — noop after first run; fire-and-forget so it doesn't block the response
+  applyMigrations().catch(() => {});
 
   const [jobs, settingsRows, expenses, customers, inventory] = await Promise.all([
     sql`SELECT * FROM jobs WHERE owner = ${SHOP_OWNER} ORDER BY created_at DESC`,

@@ -658,18 +658,27 @@ export default function Dashboard() {
                           gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
                           gap: 8, marginTop: 12 }}>
                           {active.photos.map((p) => (
-                            <div key={p.url} style={{ position: "relative", borderRadius: 8,
-                              overflow: "hidden", aspectRatio: "4/3" }}>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={p.url} alt=""
-                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                              <button
-                                onClick={() => updateActive((j) => ({
-                                  ...j, photos: j.photos.filter((x) => x.url !== p.url) }))}
-                                style={{ position: "absolute", top: 4, right: 4,
-                                  background: "rgba(0,0,0,0.55)", color: "#ffffff",
-                                  border: "none", borderRadius: 4, cursor: "pointer",
-                                  padding: "2px 7px", fontSize: 14, lineHeight: 1.4, minHeight: 0 }}>×</button>
+                            <div key={p.url} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              <div style={{ position: "relative", borderRadius: 8,
+                                overflow: "hidden", aspectRatio: "4/3" }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={p.url} alt={p.caption || ""}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                <button
+                                  onClick={() => updateActive((j) => ({
+                                    ...j, photos: j.photos.filter((x) => x.url !== p.url) }))}
+                                  style={{ position: "absolute", top: 4, right: 4,
+                                    background: "rgba(0,0,0,0.55)", color: "#ffffff",
+                                    border: "none", borderRadius: 4, cursor: "pointer",
+                                    padding: "2px 7px", fontSize: 14, lineHeight: 1.4, minHeight: 0 }}>×</button>
+                              </div>
+                              <input placeholder="Caption…" value={p.caption || ""}
+                                onChange={(e) => updateActive((j) => ({
+                                  ...j, photos: j.photos.map((x) =>
+                                    x.url === p.url ? { ...x, caption: e.target.value } : x
+                                  )
+                                }))}
+                                style={{ ...fld, fontSize: 11, padding: "4px 8px", minHeight: 0 }} />
                             </div>
                           ))}
                         </div>
