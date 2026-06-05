@@ -312,7 +312,7 @@ export default function Dashboard() {
       {/* ── Desktop left nav ── */}
       {!isMobile && (
         <nav className="dsk-nav noprint">
-          <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid #e5d5c0" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/dex-logo.png" alt="DEX" style={{ height: 26, objectFit: "contain" }} />
           </div>
@@ -337,8 +337,8 @@ export default function Dashboard() {
                 <button key={label} onClick={onClick} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 16px", width: "100%",
-                  background: isActive ? "rgba(255,106,43,0.13)" : "transparent",
-                  color: isActive ? "#ff6a2b" : "#9ca3af",
+                  background: isActive ? "rgba(255,106,43,0.1)" : "transparent",
+                  color: isActive ? "#ff6a2b" : "#6b6054",
                   border: "none", borderLeft: `3px solid ${isActive ? "#ff6a2b" : "transparent"}`,
                   cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit",
                   letterSpacing: 0.3, textAlign: "left",
@@ -351,11 +351,11 @@ export default function Dashboard() {
               )
             )}
           </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 4 }}>
+          <div style={{ borderTop: "1px solid #e5d5c0", paddingTop: 4 }}>
             <button onClick={() => setShowSettings(true)} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 16px", width: "100%", background: "transparent",
-              color: "#9ca3af", border: "none", cursor: "pointer",
+              color: "#6b6054", border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             }}>
               <span style={{ width: 18, textAlign: "center" }}>⚙</span>
@@ -364,14 +364,14 @@ export default function Dashboard() {
             <button onClick={signOut} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 16px", width: "100%", background: "transparent",
-              color: "#9ca3af", border: "none", cursor: "pointer",
+              color: "#6b6054", border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             }}>
               <span style={{ width: 18, textAlign: "center" }}>→</span>
               Sign out
             </button>
             {userEmail && (
-              <div style={{ padding: "4px 16px 12px", fontSize: 11, color: "#4b5563",
+              <div style={{ padding: "4px 16px 12px", fontSize: 11, color: "#a0948a",
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {userEmail}
               </div>

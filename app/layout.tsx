@@ -38,7 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           .dsk-nav {
             width: 210px;
             flex-shrink: 0;
-            background: #18181b;
+            background: #f5efe6;
+            border-right: 1px solid #e5d5c0;
             display: flex;
             flex-direction: column;
             height: 100vh;
