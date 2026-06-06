@@ -27,7 +27,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <style>{`
           * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
           body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827; }
-          input:focus,textarea:focus,select:focus { outline:none; border-color:#ff6a2b !important; }
+          input:focus,textarea:focus,select:focus { outline:none; border-color:#ff6a2b !important; box-shadow:0 0 0 3px rgba(255,106,43,0.15); }
+          button:focus-visible { outline:2px solid #ff6a2b; outline-offset:2px; }
           button:hover:not(:disabled) { filter:brightness(0.95); }
           button:active:not(:disabled) { filter:brightness(0.90); }
           .disp { font-family:'Oswald',sans-serif; }

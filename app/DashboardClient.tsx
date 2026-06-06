@@ -320,32 +320,32 @@ export default function Dashboard() {
           </div>
           <div style={{ flex: 1, paddingTop: 8 }}>
             {([
-              { label: "Jobs", icon: "🏠", isActive: !anySection,
+              { label: "Jobs", iconName: "home" as IconName, isActive: !anySection,
                 badge: 0,
                 onClick: () => { setActiveId(null); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); } },
-              { label: "Calendar", icon: "📅", isActive: showCalendar, badge: 0,
+              { label: "Calendar", iconName: "calendar" as IconName, isActive: showCalendar, badge: 0,
                 onClick: () => { const n = !showCalendar; setShowCalendar(n); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
-              { label: "Pipeline", icon: "⋮⋮", isActive: showPipeline, badge: 0,
+              { label: "Pipeline", iconName: "pipeline" as IconName, isActive: showPipeline, badge: 0,
                 onClick: () => { const n = !showPipeline; setShowPipeline(n); setShowCalendar(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
-              { label: "Customers", icon: "👥", isActive: showCustomers, badge: 0,
+              { label: "Customers", iconName: "users" as IconName, isActive: showCustomers, badge: 0,
                 onClick: () => { const n = !showCustomers; setShowCustomers(n); setShowCalendar(false); setShowPipeline(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
-              { label: "Inventory", icon: "📦", isActive: showInventory,
+              { label: "Inventory", iconName: "box" as IconName, isActive: showInventory,
                 badge: inventory.filter((i) => i.stock <= i.reorder_at && i.reorder_at > 0).length,
                 onClick: () => { const n = !showInventory; setShowInventory(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowAccounting(false); if (n) setActiveId(null); } },
-              { label: "Finance", icon: "₨", isActive: showAccounting, badge: 0,
+              { label: "Finance", iconName: "finance" as IconName, isActive: showAccounting, badge: 0,
                 onClick: () => { const n = !showAccounting; setShowAccounting(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); if (n) setActiveId(null); } },
-            ] as { label: string; icon: string; isActive: boolean; onClick: () => void; badge: number }[]).map(
-              ({ label, icon, isActive, onClick, badge }) => (
+            ] as { label: string; iconName: IconName; isActive: boolean; onClick: () => void; badge: number }[]).map(
+              ({ label, iconName, isActive, onClick, badge }) => (
                 <button key={label} onClick={onClick} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 16px", width: "100%",
+                  padding: "10px 16px", width: "100%", minHeight: 44,
                   background: isActive ? "rgba(255,106,43,0.1)" : "transparent",
                   color: isActive ? "#ff6a2b" : "#6b6054",
                   border: "none", borderLeft: `3px solid ${isActive ? "#ff6a2b" : "transparent"}`,
                   cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit",
                   letterSpacing: 0.3, textAlign: "left",
                 }}>
-                  <span style={{ width: 18, textAlign: "center", flexShrink: 0 }}>{icon}</span>
+                  <Ico n={iconName} size={16} />
                   <span style={{ flex: 1 }}>{label}</span>
                   {badge > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10,
                     padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>{badge}</span>}
@@ -356,20 +356,20 @@ export default function Dashboard() {
           <div style={{ borderTop: "1px solid #e5d5c0", paddingTop: 4 }}>
             <button onClick={() => setShowSettings(true)} style={{
               display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 16px", width: "100%", background: "transparent",
+              padding: "10px 16px", width: "100%", background: "transparent", minHeight: 44,
               color: "#6b6054", border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             }}>
-              <span style={{ width: 18, textAlign: "center" }}>⚙</span>
+              <Ico n="settings" size={16} />
               Settings
             </button>
             <button onClick={signOut} style={{
               display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 16px", width: "100%", background: "transparent",
+              padding: "10px 16px", width: "100%", background: "transparent", minHeight: 44,
               color: "#6b6054", border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             }}>
-              <span style={{ width: 18, textAlign: "center" }}>→</span>
+              <Ico n="logout" size={16} />
               Sign out
             </button>
             {userEmail && (
@@ -391,8 +391,10 @@ export default function Dashboard() {
         {isMobile && (
           <>
             {activeId && (
-              <button style={{ ...btn(), padding: "8px 12px", fontSize: 20, lineHeight: 1, minHeight: 40 }}
-                onClick={() => setActiveId(null)} aria-label="Back">←</button>
+              <button style={{ ...btn(), padding: "8px 12px", minHeight: 44, display: "flex", alignItems: "center" }}
+                onClick={() => setActiveId(null)} aria-label="Back">
+                <Ico n="arrowL" size={18} />
+              </button>
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
@@ -405,8 +407,10 @@ export default function Dashboard() {
               </span>
             )}
             <div style={{ flex: 1 }} />
-            <button style={{ ...btn(), padding: "8px 10px", fontSize: 15, minHeight: 40 }}
-              onClick={() => setShowSettings(true)} aria-label="Settings">⚙</button>
+            <button style={{ ...btn(), padding: "8px 10px", minHeight: 44, display: "flex", alignItems: "center" }}
+              onClick={() => setShowSettings(true)} aria-label="Settings">
+              <Ico n="settings" size={18} />
+            </button>
           </>
         )}
 
@@ -414,8 +418,10 @@ export default function Dashboard() {
         {!isMobile && (
           <>
             {activeId && (
-              <button style={{ ...btn(), padding: "7px 12px", fontSize: 13, minHeight: 36 }}
-                onClick={() => setActiveId(null)}>← Jobs</button>
+              <button style={{ ...btn(), padding: "7px 12px", minHeight: 36, display: "flex", alignItems: "center", gap: 6 }}
+                onClick={() => setActiveId(null)}>
+                <Ico n="arrowL" size={14} /> Jobs
+              </button>
             )}
             {activeId && active && (
               <span className="disp" style={{ fontSize: 15, letterSpacing: 0.5, fontWeight: 700,
@@ -432,10 +438,11 @@ export default function Dashboard() {
         {!anySection && (
           <button
             style={{ ...btn("#ff6a2b", "#ffffff"),
-              padding: isMobile ? "8px 16px" : "9px 14px",
-              fontSize: isMobile ? 20 : 13, lineHeight: 1 }}
+              padding: isMobile ? "8px 14px" : "9px 14px",
+              minHeight: 44, display: "flex", alignItems: "center", gap: 6 }}
             onClick={newJob} aria-label="New job">
-            {isMobile ? "+" : "+ New Job"}
+            <Ico n="plus" size={isMobile ? 18 : 14} />
+            {!isMobile && "New Job"}
           </button>
         )}
       </header>
@@ -583,16 +590,20 @@ export default function Dashboard() {
                         <option>Quote</option><option>Invoice</option><option>Paid</option>
                       </select>
                       <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <button style={{ ...btn(), fontSize: 12 }} onClick={printInspection}>🖨 Inspection</button>
-                        <button style={{ ...btn(), fontSize: 12 }} onClick={printQuote}>
-                          🖨 {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
+                        <button style={{ ...btn(), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={printInspection}>
+                          <Ico n="printer" size={13} /> Inspection
                         </button>
-                        <button style={{ ...btn("#25d366", "#ffffff"), fontSize: 12 }} onClick={() => {
+                        <button style={{ ...btn(), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={printQuote}>
+                          <Ico n="printer" size={13} /> {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
+                        </button>
+                        <button style={{ ...btn("#25d366", "#ffffff"), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => {
                           const url = `${window.location.origin}/q/${active.id}`;
                           const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
                           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-                        }}>📲 WhatsApp</button>
-                        <button style={{ ...btn("#fef2f2", "#dc2626"), fontSize: 12 }} onClick={() => deleteJob(active.id)}>Delete</button>
+                        }}><Ico n="message" size={13} /> WhatsApp</button>
+                        <button style={{ ...btn("#fef2f2", "#dc2626"), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => deleteJob(active.id)}>
+                          <Ico n="trash" size={13} /> Delete
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -720,8 +731,8 @@ export default function Dashboard() {
                       <label style={{ display: "block", cursor: "pointer" }}>
                         <div style={{ border: `2px dashed ${tokens.borderHi}`, borderRadius: 8,
                           padding: "18px 12px", textAlign: "center", color: tokens.muted, fontSize: 13,
-                          lineHeight: 1.6 }}>
-                          <div style={{ fontSize: 24, marginBottom: 4 }}>📷</div>
+                          lineHeight: 1.6, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                          <Ico n="camera" size={24} />
                           {isMobile ? "Tap to take a photo or pick from library" : "Click to upload a photo"}
                         </div>
                         <input type="file" accept="image/*" capture="environment"
@@ -767,9 +778,10 @@ export default function Dashboard() {
                     </Section>
 
                     {isMobile && (
-                      <button style={{ ...btn(), width: "100%", padding: 14, marginBottom: 16, fontSize: 14 }}
+                      <button style={{ ...btn(), width: "100%", padding: 14, marginBottom: 16, fontSize: 14,
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                         onClick={printInspection}>
-                        🖨 Print Inspection Sheet
+                        <Ico n="printer" size={16} /> Print Inspection Sheet
                       </button>
                     )}
                   </div>
@@ -858,17 +870,19 @@ export default function Dashboard() {
 
                       {isMobile && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-                          <button style={{ ...btn(), width: "100%", padding: 14, fontSize: 14 }}
+                          <button style={{ ...btn(), width: "100%", padding: 14, fontSize: 14,
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                             onClick={printQuote}>
-                            🖨 Print {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
+                            <Ico n="printer" size={16} /> Print {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                           </button>
-                          <button style={{ ...btn("#25d366", "#ffffff"), width: "100%", padding: 14, fontSize: 14 }}
+                          <button style={{ ...btn("#25d366", "#ffffff"), width: "100%", padding: 14, fontSize: 14,
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                             onClick={() => {
                               const url = `${window.location.origin}/q/${active.id}`;
                               const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
                               window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                             }}>
-                            📲 Share on WhatsApp
+                            <Ico n="message" size={16} /> Share on WhatsApp
                           </button>
                         </div>
                       )}
@@ -907,47 +921,47 @@ export default function Dashboard() {
       <nav className="mob-nav noprint">
         {activeId && !anySection ? (
           // Job detail mode: job-level navigation
-          [
-            { label: "Jobs", icon: "←", onClick: () => setActiveId(null), isActive: false },
-            { label: "Inspect", icon: "◎", onClick: () => setTab("inspection"), isActive: tab === "inspection" },
-            { label: "Quote", icon: "⊟", onClick: () => setTab("quote"), isActive: tab === "quote" },
-            { label: "Print", icon: "🖨", onClick: () => tab === "inspection" ? printInspection() : printQuote(), isActive: false },
-          ].map(({ label, icon, onClick, isActive }) => (
+          ([
+            { label: "Jobs",    iconName: "arrowL" as IconName,  onClick: () => setActiveId(null),                                         isActive: false },
+            { label: "Inspect", iconName: "inspect" as IconName, onClick: () => setTab("inspection"),                                      isActive: tab === "inspection" },
+            { label: "Quote",   iconName: "invoice" as IconName, onClick: () => setTab("quote"),                                           isActive: tab === "quote" },
+            { label: "Print",   iconName: "printer" as IconName, onClick: () => tab === "inspection" ? printInspection() : printQuote(),   isActive: false },
+          ] as { label: string; iconName: IconName; onClick: () => void; isActive: boolean }[]).map(({ label, iconName, onClick, isActive }) => (
             <button key={label} onClick={onClick}
               style={{ flex: 1, background: "transparent", border: "none",
                 color: isActive ? tokens.accent : tokens.faint,
-                cursor: "pointer", padding: "10px 0 8px",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                cursor: "pointer", padding: "10px 0 8px", minHeight: 56,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                 fontFamily: "inherit",
                 borderTop: `2px solid ${isActive ? tokens.accent : "transparent"}` }}>
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+              <Ico n={iconName} size={20} />
               <span style={{ fontSize: 10, letterSpacing: 0.5 }}>{label}</span>
             </button>
           ))
         ) : (
           // Section navigation mode
           ([
-            { label: "Jobs",  icon: "🏠", isActive: !activeId && !anySection,
+            { label: "Jobs",    iconName: "home" as IconName,     isActive: !activeId && !anySection,
               onClick: () => { setActiveId(null); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); } },
-            { label: "Book",  icon: "📅", isActive: showCalendar,
+            { label: "Book",    iconName: "calendar" as IconName, isActive: showCalendar,
               onClick: () => { const n = !showCalendar; setShowCalendar(n); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
-            { label: "CRM",   icon: "👥", isActive: showCustomers,
+            { label: "CRM",     iconName: "users" as IconName,    isActive: showCustomers,
               onClick: () => { const n = !showCustomers; setShowCustomers(n); setShowCalendar(false); setShowPipeline(false); setShowInventory(false); setShowAccounting(false); if (n) setActiveId(null); } },
-            { label: "Stock", icon: "📦", isActive: showInventory,
+            { label: "Stock",   iconName: "box" as IconName,      isActive: showInventory,
               onClick: () => { const n = !showInventory; setShowInventory(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowAccounting(false); if (n) setActiveId(null); },
               badge: inventory.filter((i) => i.stock <= i.reorder_at && i.reorder_at > 0).length },
-            { label: "Finance", icon: "₨", isActive: showAccounting,
+            { label: "Finance", iconName: "finance" as IconName,  isActive: showAccounting,
               onClick: () => { const n = !showAccounting; setShowAccounting(n); setShowCalendar(false); setShowPipeline(false); setShowCustomers(false); setShowInventory(false); if (n) setActiveId(null); } },
-          ] as { label: string; icon: string; isActive: boolean; onClick: () => void; badge?: number }[]).map(
-            ({ label, icon, isActive, onClick, badge }) => (
+          ] as { label: string; iconName: IconName; isActive: boolean; onClick: () => void; badge?: number }[]).map(
+            ({ label, iconName, isActive, onClick, badge }) => (
               <button key={label} onClick={onClick}
                 style={{ flex: 1, background: "transparent", border: "none",
                   color: isActive ? tokens.accent : tokens.faint,
-                  cursor: "pointer", padding: "10px 0 8px", position: "relative",
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                  cursor: "pointer", padding: "10px 0 8px", position: "relative", minHeight: 56,
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                   fontFamily: "inherit",
                   borderTop: `2px solid ${isActive ? tokens.accent : "transparent"}` }}>
-                <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+                <Ico n={iconName} size={20} />
                 <span style={{ fontSize: 10, letterSpacing: 0.5 }}>{label}</span>
                 {!!badge && (
                   <span style={{ position: "absolute", top: 6, right: "50%", transform: "translateX(10px)",
@@ -1080,7 +1094,36 @@ function Center({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Accounting section ───────────────────────────────────────────────────────
+// ── SVG icon system ───────────────────────────────────────────────────────────
+const ICONS = {
+  home:     ["M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z", "M9 22V12h6v10"],
+  calendar: ["M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"],
+  pipeline: ["M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M9 3v18M9 3h10a2 2 0 012 2v14a2 2 0 01-2 2H9"],
+  users:    ["M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2", "M9 11a4 4 0 100-8 4 4 0 000 8z", "M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"],
+  box:      ["M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z", "M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"],
+  finance:  ["M12 2v20", "M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"],
+  settings: ["M12 15a3 3 0 100-6 3 3 0 000 6z", "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"],
+  logout:   ["M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"],
+  arrowL:   ["M19 12H5", "M12 19l-7-7 7-7"],
+  printer:  ["M6 9V2h12v7", "M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"],
+  message:  ["M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"],
+  plus:     ["M12 5v14M5 12h14"],
+  trash:    ["M3 6h18", "M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"],
+  inspect:  ["M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2", "M9 5a2 2 0 002 2h2a2 2 0 002-2 2 2 0 00-2-2h-2a2 2 0 00-2 2z", "M9 12h6M9 15h3"],
+  invoice:  ["M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z", "M14 2v6h6M16 13H8M16 17H8M10 9H8"],
+  camera:   ["M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z", "M12 17a4 4 0 100-8 4 4 0 000 8z"],
+};
+type IconName = keyof typeof ICONS;
+
+function Ico({ n, size = 16 }: { n: IconName; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true" style={{ flexShrink: 0, display: "block" }}>
+      {(ICONS[n] as string[]).map((d, i) => <path key={i} d={d} />)}
+    </svg>
+  );
+}
 function AccountingSection({
   isMobile, jobs, expenses, settings, period, setPeriod,
   expForm, setExpForm, expSaving, onSave, onDelete,
