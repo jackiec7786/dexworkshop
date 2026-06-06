@@ -308,7 +308,7 @@ export default function Dashboard() {
           <p style={{ color: tokens.muted, maxWidth: 320, lineHeight: 1.6 }}>
             Check your connection and try again.
           </p>
-          <button style={btn("#ff6a2b", "#ffffff")} onClick={load}>Retry</button>
+          <button style={btn(tokens.accent, tokens.surface)} onClick={load}>Retry</button>
         </div>
       </Center>
     );
@@ -331,7 +331,7 @@ export default function Dashboard() {
       {/* ── Desktop left nav ── */}
       {!isMobile && (
         <nav className="dsk-nav noprint">
-          <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid #e5d5c0" }}>
+          <div style={{ padding: "16px 16px 14px", borderBottom: `1px solid ${tokens.navBorder}` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/dex-logo.png" alt="DEX" width={90} height={26} style={{ height: 26, objectFit: "contain" }} />
           </div>
@@ -356,25 +356,25 @@ export default function Dashboard() {
                 <button key={label} onClick={onClick} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 16px", width: "100%", minHeight: 44,
-                  background: isActive ? "rgba(255,106,43,0.1)" : "transparent",
-                  color: isActive ? "#ff6a2b" : "#6b6054",
-                  border: "none", borderLeft: `3px solid ${isActive ? "#ff6a2b" : "transparent"}`,
+                  background: isActive ? `${tokens.accent}1a` : "transparent",
+                  color: isActive ? tokens.accent : tokens.navText,
+                  border: "none", borderLeft: `3px solid ${isActive ? tokens.accent : "transparent"}`,
                   cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit",
                   letterSpacing: 0.3, textAlign: "left",
                 }}>
                   <Ico n={iconName} size={16} />
                   <span style={{ flex: 1 }}>{label}</span>
-                  {badge > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10,
+                  {badge > 0 && <span style={{ background: tokens.danger, color: tokens.surface, borderRadius: 10,
                     padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>{badge}</span>}
                 </button>
               )
             )}
           </div>
-          <div style={{ borderTop: "1px solid #e5d5c0", paddingTop: 4 }}>
+          <div style={{ borderTop: `1px solid ${tokens.navBorder}`, paddingTop: 4 }}>
             <button onClick={() => setShowSettings(true)} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 16px", width: "100%", background: "transparent", minHeight: 44,
-              color: "#6b6054", border: "none", cursor: "pointer",
+              color: tokens.navText, border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             }}>
               <Ico n="settings" size={16} />
@@ -383,14 +383,14 @@ export default function Dashboard() {
             <button onClick={signOut} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 16px", width: "100%", background: "transparent", minHeight: 44,
-              color: "#6b6054", border: "none", cursor: "pointer",
+              color: tokens.navText, border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             }}>
               <Ico n="logout" size={16} />
               Sign out
             </button>
             {userEmail && (
-              <div style={{ padding: "4px 16px 12px", fontSize: 11, color: "#a0948a",
+              <div style={{ padding: "4px 16px 12px", fontSize: 11, color: tokens.navTextFaint,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {userEmail}
               </div>
@@ -454,7 +454,7 @@ export default function Dashboard() {
 
         {!anySection && (
           <button
-            style={{ ...btn("#ff6a2b", "#ffffff"),
+            style={{ ...btn(tokens.accent, tokens.surface),
               padding: isMobile ? "8px 14px" : "9px 14px",
               minHeight: 44, display: "flex", alignItems: "center", gap: 6 }}
             onClick={newJob} aria-label="New job">
@@ -527,7 +527,7 @@ export default function Dashboard() {
               return (
                 <div key={j.id} onClick={() => selectJob(j.id)}
                   style={{ padding: "12px 11px", borderRadius: 8, marginBottom: 8, cursor: "pointer",
-                    background: sel ? "#fff8f5" : tokens.surface,
+                    background: sel ? tokens.accentSurface : tokens.surface,
                     border: `1px solid ${sel ? tokens.accent : tokens.border}`,
                     boxShadow: sel ? `0 0 0 1px ${tokens.accent}20` : "0 1px 3px rgba(0,0,0,0.04)",
                     WebkitTapHighlightColor: "transparent", userSelect: "none" }}>
@@ -573,7 +573,7 @@ export default function Dashboard() {
               <div className="noprint" style={{ color: tokens.faint, display: "grid", placeItems: "center",
                 height: "100%", minHeight: 300, textAlign: "center" }}>
                 <div>
-                  <div className="disp" style={{ fontSize: 28, color: "#d1d5db" }}>NO JOB SELECTED</div>
+                  <div className="disp" style={{ fontSize: 28, color: tokens.borderHi }}>NO JOB SELECTED</div>
                   <p style={{ maxWidth: 360, marginTop: 12, lineHeight: 1.6, fontSize: 14 }}>
                     Pick a job from the list or create one. Each job carries one customer and vehicle
                     through inspection, quote and invoice.
@@ -623,12 +623,12 @@ export default function Dashboard() {
                         <button style={{ ...btn(), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={printQuote}>
                           <Ico n="printer" size={13} /> {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                         </button>
-                        <button style={{ ...btn("#25d366", "#ffffff"), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => {
+                        <button style={{ ...btn(tokens.whatsapp, tokens.surface), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => {
                           const url = `${window.location.origin}/q/${active.id}`;
                           const text = `Your ${active.status === "Paid" ? "receipt" : active.status.toLowerCase()} from ${settings.biz_name}: ${url}`;
                           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                         }}><Ico n="message" size={13} /> WhatsApp</button>
-                        <button style={{ ...btn("#fef2f2", "#dc2626"), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => deleteJob(active.id)}>
+                        <button style={{ ...btn(tokens.dangerBg, tokens.danger), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => deleteJob(active.id)}>
                           <Ico n="trash" size={13} /> Delete
                         </button>
                       </div>
@@ -688,7 +688,7 @@ export default function Dashboard() {
                           </div>
                         )}
                         {active.scheduled_date && (
-                          <button style={{ marginTop: 20, ...btn("#fef2f2", tokens.danger),
+                          <button style={{ marginTop: 20, ...btn(tokens.dangerBg, tokens.danger),
                             padding: "5px 10px", fontSize: 12, minHeight: 0 }}
                             onClick={() => {
                               updateActive((j) => ({ ...j, scheduled_date: null }));
@@ -704,8 +704,8 @@ export default function Dashboard() {
                       <div className="code-strip">
                         {CODE_KEYS.map((code) => (
                           <button key={code} onClick={() => setActiveType(code)} title={DEX_CODES[code]}
-                            style={{ ...btn(activeType === code ? MARK_COLORS[code] : "#f3f4f6",
-                              activeType === code ? "#ffffff" : "#374151"),
+                            style={{ ...btn(activeType === code ? MARK_COLORS[code] : tokens.surfaceHi,
+                              activeType === code ? tokens.surface : tokens.text),
                               padding: "10px 0", fontSize: 12, display: "flex", flexDirection: "column",
                               gap: 3, alignItems: "center", width: "100%", minHeight: 0 }}>
                             <span style={{ fontWeight: 700 }}>{code}</span>
@@ -744,7 +744,7 @@ export default function Dashboard() {
                                       ? { ...x, sqin: e.target.value ? Number(e.target.value) : undefined }
                                       : x) }))}
                                   style={{ ...fld, width: 80, padding: "5px 8px", fontSize: 12, minHeight: 0 }} />
-                                <button aria-label="Remove mark" style={{ ...btn("#fef2f2", "#dc2626"), minHeight: 0, padding: "6px 10px" }}
+                                <button aria-label="Remove mark" style={{ ...btn(tokens.dangerBg, tokens.danger), minHeight: 0, padding: "6px 10px" }}
                                   onClick={() => updateActive((j) => ({
                                     ...j, marks: j.marks.filter((x) => x.id !== m.id) }))}>×</button>
                               </div>
@@ -775,7 +775,7 @@ export default function Dashboard() {
                               <div style={{ position: "relative", borderRadius: 8,
                                 overflow: "hidden", aspectRatio: "4/3" }}>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={p.url} alt={p.caption || ""}
+                                <img src={p.url} alt={p.caption || ""} loading="lazy"
                                   style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                 <button
                                   aria-label="Remove photo"
@@ -829,7 +829,7 @@ export default function Dashboard() {
                                   gap: 8, marginBottom: 8 }}>
                                   <input style={fld} placeholder="Description" value={li.desc}
                                     onChange={(e) => editItem(li.id, "desc", e.target.value)} />
-                                  <button aria-label="Remove line item" style={{ ...btn("#fef2f2", "#dc2626"),
+                                  <button aria-label="Remove line item" style={{ ...btn(tokens.dangerBg, tokens.danger),
                                     alignSelf: "stretch", padding: "0 14px" }}
                                     onClick={() => removeItem(li.id)}>×</button>
                                 </div>
@@ -875,7 +875,7 @@ export default function Dashboard() {
                                   <td style={{ ...td, color: tokens.muted }}>
                                     {money((li.qty || 0) * (li.price || 0))}
                                   </td>
-                                  <td style={td}><button aria-label="Remove line item" style={btn("#fef2f2", "#dc2626")}
+                                  <td style={td}><button aria-label="Remove line item" style={btn(tokens.dangerBg, tokens.danger)}
                                     onClick={() => removeItem(li.id)}>×</button></td>
                                 </tr>
                               ))}
@@ -903,7 +903,7 @@ export default function Dashboard() {
                             onClick={printQuote}>
                             <Ico n="printer" size={16} /> Print {active.status === "Quote" ? "Quote" : active.status === "Paid" ? "Receipt" : "Invoice"}
                           </button>
-                          <button style={{ ...btn("#25d366", "#ffffff"), width: "100%", padding: 14, fontSize: 14,
+                          <button style={{ ...btn(tokens.whatsapp, tokens.surface), width: "100%", padding: 14, fontSize: 14,
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                             onClick={() => {
                               const url = `${window.location.origin}/q/${active.id}`;
@@ -921,7 +921,7 @@ export default function Dashboard() {
                 {/* Delete — bottom of form, away from accidental taps */}
                 {isMobile && (
                   <div className="noprint" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
-                    <button style={{ ...btn("#fef2f2", "#dc2626"), width: "100%", padding: 12 }}
+                    <button style={{ ...btn(tokens.dangerBg, tokens.danger), width: "100%", padding: 12 }}
                       onClick={() => deleteJob(active.id)}>
                       Delete Job
                     </button>
@@ -1009,8 +1009,8 @@ export default function Dashboard() {
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.65)",
             display: "grid", placeItems: "center", zIndex: 50, padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()}
-            style={{ background: "#ffffff", padding: 24, borderRadius: 12, width: "100%",
-              maxWidth: 460, border: "1px solid #e5e7eb", maxHeight: "90vh", overflowY: "auto",
+            style={{ background: tokens.surface, padding: 24, borderRadius: 12, width: "100%",
+              maxWidth: 460, border: `1px solid ${tokens.border}`, maxHeight: "90vh", overflowY: "auto",
               boxShadow: "0 8px 32px rgba(0,0,0,0.10)" }}>
             <h3 className="disp" style={{ margin: "0 0 4px", letterSpacing: 1 }}>WORKSHOP SETTINGS</h3>
             {userEmail && (
@@ -1045,7 +1045,7 @@ export default function Dashboard() {
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}>
               <button style={btn()} onClick={() => setShowSettings(false)}>Cancel</button>
-              <button style={btn("#ff6a2b", "#ffffff")} onClick={saveSettings}>Save</button>
+              <button style={btn(tokens.accent, tokens.surface)} onClick={saveSettings}>Save</button>
             </div>
           </div>
         </div>
@@ -1057,22 +1057,22 @@ export default function Dashboard() {
 
 // ── Style atoms ──────────────────────────────────────────────────────────────
 const fld: React.CSSProperties = {
-  background: "#f9fafb", border: "1px solid #d1d5db", borderRadius: 6, color: "#111827",
+  background: tokens.surfaceAlt, border: `1px solid ${tokens.borderHi}`, borderRadius: 6, color: tokens.text,
   padding: "9px 11px", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: "inherit",
 };
 const lbl: React.CSSProperties = {
-  fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#6b7280",
+  fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: tokens.muted,
   marginBottom: 5, display: "block", fontWeight: 600,
 };
 const hdrStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
-  borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0,
-  background: "#ffffff", zIndex: 10, minHeight: 56,
+  borderBottom: `1px solid ${tokens.border}`, position: "sticky", top: 0,
+  background: tokens.surface, zIndex: 10, minHeight: 56,
   boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
 };
-const th: React.CSSProperties = { padding: "6px 8px", borderBottom: "1px solid #e5e7eb", fontWeight: 600 };
+const th: React.CSSProperties = { padding: "6px 8px", borderBottom: `1px solid ${tokens.border}`, fontWeight: 600 };
 const td: React.CSSProperties = { padding: "4px 8px", verticalAlign: "top" };
-const btn = (bg = "#f3f4f6", fg = "#374151"): React.CSSProperties => ({
+const btn = (bg: string = tokens.surfaceHi, fg: string = tokens.text): React.CSSProperties => ({
   background: bg, color: fg, border: "none", borderRadius: 6,
   padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer",
   fontFamily: "inherit", letterSpacing: 0.3,
@@ -1080,8 +1080,8 @@ const btn = (bg = "#f3f4f6", fg = "#374151"): React.CSSProperties => ({
 
 // ── Category colours ─────────────────────────────────────────────────────────
 const CAT_COLOR: Record<string, string> = {
-  Rent: tokens.info, Utilities: tokens.warn, Materials: "#7c3aed",
-  Labour: tokens.success, Fuel: tokens.danger, Equipment: "#0891b2",
+  Rent: tokens.info, Utilities: tokens.warn, Materials: tokens.purple,
+  Labour: tokens.success, Fuel: tokens.danger, Equipment: tokens.cyan,
   Maintenance: tokens.muted, Other: tokens.faint,
 };
 
@@ -1116,7 +1116,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Center({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "grid", placeItems: "center", height: "100vh", color: "#9ca3af" }}>
+    <div style={{ display: "grid", placeItems: "center", height: "100vh", color: tokens.faint }}>
       {children}
     </div>
   );
@@ -1256,8 +1256,8 @@ function AccountingSection({
             <span className="disp" style={{ fontSize: 11, letterSpacing: 2, color: tokens.accent }}>
               EXPENSES
             </span>
-            <button style={{ ...btn(expForm && !expForm.id ? "#fef2f2" : "#ff6a2b",
-              expForm && !expForm.id ? tokens.danger : "#ffffff"), padding: "6px 12px", fontSize: 12 }}
+            <button style={{ ...btn(expForm && !expForm.id ? tokens.dangerBg : tokens.accent,
+              expForm && !expForm.id ? tokens.danger : tokens.surface), padding: "6px 12px", fontSize: 12 }}
               onClick={() => setExpForm(expForm && !expForm.id ? null : blankExp())}>
               {expForm && !expForm.id ? "✕ Cancel" : "+ Add Expense"}
             </button>
@@ -1306,7 +1306,7 @@ function AccountingSection({
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={btn()} onClick={() => setExpForm(null)}>Cancel</button>
-                <button style={{ ...btn("#ff6a2b", "#ffffff"), opacity: expSaving ? 0.7 : 1 }}
+                <button style={{ ...btn(tokens.accent, tokens.surface), opacity: expSaving ? 0.7 : 1 }}
                   disabled={expSaving} onClick={onSave}>
                   {expSaving ? "Saving…" : expForm.id ? "Update Expense" : "Save Expense"}
                 </button>
@@ -1353,7 +1353,7 @@ function AccountingSection({
                       id: e.id, date: e.date, category: e.category, supplier: e.supplier,
                       amount: String(e.amount), gst: String(e.gst), note: e.note,
                     })}>Edit</button>
-                  <button style={{ ...btn("#fef2f2", tokens.danger), padding: "4px 9px", fontSize: 11, minHeight: 0 }}
+                  <button style={{ ...btn(tokens.dangerBg, tokens.danger), padding: "4px 9px", fontSize: 11, minHeight: 0 }}
                     onClick={() => onDelete(e.id)}>Del</button>
                 </div>
               </div>
@@ -1499,7 +1499,7 @@ function PipelineSection({ isMobile, jobs, onSelectJob, onNewJob }: {
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <div className="disp" style={{ fontSize: 20, letterSpacing: 1.5 }}>PIPELINE</div>
         <div style={{ flex: 1 }} />
-        <button style={{ ...btn("#ff6a2b", "#ffffff"), padding: "8px 14px" }} onClick={onNewJob}>
+        <button style={{ ...btn(tokens.accent, tokens.surface), padding: "8px 14px" }} onClick={onNewJob}>
           + New Job
         </button>
       </div>
@@ -1542,7 +1542,7 @@ function PipelineSection({ isMobile, jobs, onSelectJob, onNewJob }: {
                     <div key={j.id} onClick={() => onSelectJob(j.id)}
                       style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}`,
                         cursor: "pointer", transition: "background 0.1s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = tokens.surfaceAlt)}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                       <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 3,
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1667,7 +1667,7 @@ function CalendarSection({ isMobile, jobs, onSelectJob }: {
                     padding: "8px 4px", minHeight: 52, cursor: "pointer",
                     borderBottom: `1px solid ${tokens.border}`,
                     borderRight: `1px solid ${tokens.border}`,
-                    background: isSelected ? "#fff8f5" : isToday ? "#f0f9ff" : "transparent",
+                    background: isSelected ? tokens.accentSurface : isToday ? tokens.infoBg : "transparent",
                     transition: "background 0.1s",
                   }}>
                   <div style={{ textAlign: "center", fontSize: 13, fontWeight: isToday ? 700 : 400,
@@ -1723,7 +1723,7 @@ function CalendarSection({ isMobile, jobs, onSelectJob }: {
                     <div key={j.id} onClick={() => onSelectJob(j.id)}
                       style={{ padding: "12px 16px", borderBottom: `1px solid ${tokens.border}`,
                         cursor: "pointer" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = tokens.surfaceAlt)}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                       <div style={{ display: "flex", justifyContent: "space-between",
                         alignItems: "flex-start", gap: 8 }}>
@@ -1772,7 +1772,7 @@ function CalendarSection({ isMobile, jobs, onSelectJob }: {
                 <div key={j.id} onClick={() => onSelectJob(j.id)}
                   style={{ padding: "10px 16px", borderBottom: `1px solid ${tokens.border}`,
                     cursor: "pointer", fontSize: 13 }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = tokens.surfaceAlt)}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                   <div style={{ fontWeight: 600, overflow: "hidden",
                     textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1854,8 +1854,8 @@ function deriveCustomers(jobs: Job[], records: CustomerRecord[]): DerivedCustome
 }
 
 const TAG_COLORS: Record<string, string> = {
-  VIP: "#d97706", Regular: tokens.info, Fleet: "#0891b2",
-  Wholesale: "#7c3aed", Referred: tokens.success, Blocked: tokens.danger,
+  VIP: tokens.warn, Regular: tokens.info, Fleet: tokens.cyan,
+  Wholesale: tokens.purple, Referred: tokens.success, Blocked: tokens.danger,
 };
 
 function CustomersSection({ isMobile, jobs, customerRecords, setCustomerRecords, onSelectJob, onNewJobForCustomer }: {
@@ -1967,7 +1967,7 @@ function CustomersSection({ isMobile, jobs, customerRecords, setCustomerRecords,
             const avgJob = c.jobs.length ? c.totalRevenue / c.jobs.filter((j) => j.status === "Paid").length || 0 : 0;
             return (
               <div key={c.key} onClick={() => openCustomer(c)}
-                style={{ background: isSelected ? "#fff8f5" : tokens.surface,
+                style={{ background: isSelected ? tokens.accentSurface : tokens.surface,
                   border: `1px solid ${isSelected ? tokens.accent : tokens.border}`,
                   borderRadius: 10, padding: "14px 16px", cursor: "pointer",
                   boxShadow: isSelected ? `0 0 0 1px ${tokens.accent}20` : "0 1px 3px rgba(0,0,0,.04)" }}>
@@ -2074,7 +2074,7 @@ function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggle
               </div>
             )}
           </div>
-          <button style={{ ...btn("#ff6a2b", "#ffffff"), padding: "8px 16px" }}
+          <button style={{ ...btn(tokens.accent, tokens.surface), padding: "8px 16px" }}
             onClick={() => onNewJobForCustomer(selected.name, selected.phone, selected.email)}>
             + New Job
           </button>
@@ -2141,7 +2141,7 @@ function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggle
         <textarea rows={4} style={{ ...fld, resize: "vertical", minHeight: 80 }}
           value={notesDraft} placeholder="Car preferences, special instructions, VIP perks…"
           onChange={(e) => setNotesDraft(e.target.value)} />
-        <button style={{ ...btn("#ff6a2b", "#ffffff"), marginTop: 8, opacity: saving ? 0.7 : 1 }}
+        <button style={{ ...btn(tokens.accent, tokens.surface), marginTop: 8, opacity: saving ? 0.7 : 1 }}
           disabled={saving || !selected.phone} onClick={onSave}>
           {saving ? "Saving…" : "Save Notes & Tags"}
         </button>
@@ -2162,7 +2162,7 @@ function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggle
             <div key={j.id} onClick={() => onSelectJob(j.id)}
               style={{ padding: "11px 16px", borderBottom: `1px solid ${tokens.border}`,
                 cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = tokens.surfaceAlt)}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: tokens.muted,
@@ -2223,7 +2223,7 @@ const blankItem = (): ItemForm => ({
 });
 
 const CAT_BADGE: Record<string, string> = {
-  Film: "#0891b2", Chemical: "#7c3aed", Consumable: tokens.success,
+  Film: tokens.cyan, Chemical: tokens.purple, Consumable: tokens.success,
   Equipment: tokens.warn, Other: tokens.muted,
 };
 
@@ -2337,8 +2337,8 @@ function InventorySection({ isMobile, inventory, setInventory }: {
           {inventory.length} items · {pkr(totalValue)} total value
         </span>
         <div style={{ flex: 1 }} />
-        <button style={{ ...btn(itemForm && !itemForm.id ? "#fef2f2" : "#ff6a2b",
-          itemForm && !itemForm.id ? tokens.danger : "#ffffff"), padding: "8px 14px" }}
+        <button style={{ ...btn(itemForm && !itemForm.id ? tokens.dangerBg : tokens.accent,
+          itemForm && !itemForm.id ? tokens.danger : tokens.surface), padding: "8px 14px" }}
           onClick={() => setItemForm(itemForm && !itemForm.id ? null : blankItem())}>
           {itemForm && !itemForm.id ? "✕ Cancel" : "+ Add Item"}
         </button>
@@ -2349,7 +2349,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
         <div style={{ marginBottom: 16, display: "grid",
           gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
           {lowStock.map((item) => (
-            <div key={item.id} style={{ background: "#fff1f1",
+            <div key={item.id} style={{ background: tokens.dangerBg,
               border: `1px solid ${tokens.danger}`, borderRadius: 8,
               padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18 }}>⚠️</span>
@@ -2423,7 +2423,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button style={btn()} onClick={() => setItemForm(null)}>Cancel</button>
-            <button style={{ ...btn("#ff6a2b", "#ffffff"), opacity: itemSaving ? 0.7 : 1 }}
+            <button style={{ ...btn(tokens.accent, tokens.surface), opacity: itemSaving ? 0.7 : 1 }}
               disabled={itemSaving} onClick={saveItem}>
               {itemSaving ? "Saving…" : itemForm.id ? "Update Item" : "Add Item"}
             </button>
@@ -2435,8 +2435,8 @@ function InventorySection({ isMobile, inventory, setInventory }: {
       <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
         {["All", ...INVENTORY_CATEGORIES].map((cat) => (
           <button key={cat} onClick={() => setCatFilter(cat)}
-            style={{ ...btn(catFilter === cat ? tokens.accent : "#f3f4f6",
-              catFilter === cat ? "#fff" : "#374151"),
+            style={{ ...btn(catFilter === cat ? tokens.accent : tokens.surfaceHi,
+              catFilter === cat ? tokens.surface : tokens.text),
               padding: "6px 12px", fontSize: 12 }}>
             {cat}
             {cat !== "All" && (
@@ -2501,7 +2501,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
                   <button style={{ ...btn(tokens.success + "22", tokens.success),
                     padding: "6px 12px", fontSize: 12 }}
                     onClick={() => adjust(item, adjVal)}>+ Receive</button>
-                  <button style={{ ...btn("#fef2f2", tokens.danger), padding: "6px 12px", fontSize: 12 }}
+                  <button style={{ ...btn(tokens.dangerBg, tokens.danger), padding: "6px 12px", fontSize: 12 }}
                     onClick={() => adjust(item, -adjVal)}>− Use</button>
                   <button style={{ ...btn(), padding: "6px 10px", fontSize: 12, marginLeft: "auto" }}
                     onClick={() => setItemForm({ id: item.id, name: item.name,
@@ -2510,7 +2510,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
                       cost: String(item.cost), supplier: item.supplier, notes: item.notes })}>
                     Edit
                   </button>
-                  <button style={{ ...btn("#fef2f2", tokens.danger), padding: "6px 10px", fontSize: 12 }}
+                  <button style={{ ...btn(tokens.dangerBg, tokens.danger), padding: "6px 10px", fontSize: 12 }}
                     onClick={() => deleteItem(item.id)}>Del</button>
                 </div>
               </div>
@@ -2536,7 +2536,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
                 const adjVal = Number(getAdj(item.id)) || 1;
                 return (
                   <tr key={item.id} style={{ borderBottom: `1px solid ${tokens.border}`,
-                    background: isLow ? "#fff8f8" : "transparent" }}>
+                    background: isLow ? tokens.dangerBg : "transparent" }}>
                     <td style={{ padding: "10px 14px" }}>
                       <div style={{ fontWeight: 600 }}>{item.name}</div>
                       {item.supplier && (
@@ -2584,7 +2584,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
                             padding: "5px 9px", fontSize: 12, minHeight: 0 }}
                           onClick={() => adjust(item, adjVal)}>+</button>
                         <button title="Use stock"
-                          style={{ ...btn("#fef2f2", tokens.danger),
+                          style={{ ...btn(tokens.dangerBg, tokens.danger),
                             padding: "5px 9px", fontSize: 12, minHeight: 0 }}
                           onClick={() => adjust(item, -adjVal)}>−</button>
                       </div>
@@ -2598,7 +2598,7 @@ function InventorySection({ isMobile, inventory, setInventory }: {
                             cost: String(item.cost), supplier: item.supplier, notes: item.notes })}>
                           Edit
                         </button>
-                        <button style={{ ...btn("#fef2f2", tokens.danger),
+                        <button style={{ ...btn(tokens.dangerBg, tokens.danger),
                           padding: "5px 9px", fontSize: 11, minHeight: 0 }}
                           onClick={() => deleteItem(item.id)}>Del</button>
                       </div>

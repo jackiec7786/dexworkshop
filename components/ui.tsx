@@ -17,11 +17,20 @@ export const tokens = {
   muted: "#6b7280",
   faint: "#757575",
   accent: "#ff6a2b",
+  accentSurface: "#fff8f5",
   success: "#16a34a",
   info: "#0369a1",
+  infoBg: "#f0f9ff",
   warn: "#b45309",
   danger: "#dc2626",
   dangerBg: "#fef2f2",
+  whatsapp: "#25d366",
+  purple: "#7c3aed",
+  cyan: "#0891b2",
+  navBg: "#f5efe6",
+  navBorder: "#e5d5c0",
+  navText: "#6b6054",
+  navTextFaint: "#a0948a",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -169,16 +178,14 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ToastCtx.Provider value={toast}>
       <ConfirmCtx.Provider value={confirm}>
-        <style>{`@keyframes dex-spin{to{transform:rotate(360deg)}}
-          @keyframes dex-toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
         {children}
 
         {/* Toast stack */}
-        <div className="noprint" style={{
+        <div className="noprint" aria-live="polite" aria-atomic="false" style={{
           position: "fixed", right: 16, bottom: 16, display: "grid", gap: 8, zIndex: 100, maxWidth: 360,
         }}>
           {toasts.map((t) => (
-            <div key={t.id} role="status" style={{
+            <div key={t.id} style={{
               background: tokens.surface,
               border: `1px solid ${tokens.border}`,
               borderLeft: `3px solid ${toastColor[t.kind]}`,

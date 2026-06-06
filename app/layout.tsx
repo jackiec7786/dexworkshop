@@ -1,5 +1,20 @@
 import type { Metadata } from "next";
+import { Roboto_Mono, Oswald } from "next/font/google";
 import { Providers } from "@/components/ui";
+
+const robotoMono = Roboto_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-roboto-mono",
+  display: "swap",
+});
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-oswald",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "DEX Workshop — Inspection, Quotes & Invoices",
@@ -8,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${robotoMono.variable} ${oswald.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -18,21 +33,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#ff6a2b" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="/dex-logo.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <style>{`
+          @keyframes dex-spin { to { transform: rotate(360deg); } }
+          @keyframes dex-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
           * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
-          body { font-family:'Roboto Mono',ui-monospace,monospace; background:#f5f5f5; color:#111827; }
+          body { font-family: var(--font-roboto-mono), ui-monospace, monospace; background:#f5f5f5; color:#111827; }
           input:focus,textarea:focus,select:focus { outline:none; border-color:#ff6a2b !important; box-shadow:0 0 0 3px rgba(255,106,43,0.15); }
           button:focus-visible { outline:2px solid #ff6a2b; outline-offset:2px; }
           button:hover:not(:disabled) { filter:brightness(0.95); }
           button:active:not(:disabled) { filter:brightness(0.90); }
           button, a, input, select, textarea { touch-action: manipulation; }
-          .disp { font-family:'Oswald',sans-serif; }
+          .disp { font-family: var(--font-oswald), sans-serif; }
           @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
           }
