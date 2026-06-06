@@ -1,6 +1,6 @@
 "use client";
-import {
-  createContext, useCallback, useContext, useMemo, useRef, useState, type CSSProperties, type ReactNode,
+import React, {
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode,
 } from "react";
 
 // ---------------------------------------------------------------------------
@@ -15,7 +15,7 @@ export const tokens = {
   borderHi: "#d1d5db",
   text: "#111827",
   muted: "#6b7280",
-  faint: "#9ca3af",
+  faint: "#757575",
   accent: "#ff6a2b",
   success: "#16a34a",
   info: "#0369a1",
@@ -35,11 +35,13 @@ const btnStyles: Record<BtnVariant, CSSProperties> = {
   ghost: { background: "transparent", color: tokens.muted },
 };
 
-export function Button({
-  variant = "default", style, children, ...rest
-}: { variant?: BtnVariant } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+export const Button = React.forwardRef<
+  HTMLButtonElement,
+  { variant?: BtnVariant } & React.ButtonHTMLAttributes<HTMLButtonElement>
+>(function Button({ variant = "default", style, children, ...rest }, ref) {
   return (
     <button
+      ref={ref}
       {...rest}
       style={{
         border: "none", borderRadius: 6, padding: "9px 14px", fontSize: 13, fontWeight: 600,
@@ -51,7 +53,7 @@ export function Button({
       {children}
     </button>
   );
-}
+});
 
 export function Spinner({ size = 18, label }: { size?: number; label?: string }) {
   return (
@@ -94,6 +96,51 @@ const toastColor: Record<ToastKind, string> = {
 type ConfirmOpts = { title: string; message?: string; confirmText?: string; danger?: boolean };
 const ConfirmCtx = createContext<(opts: ConfirmOpts) => Promise<boolean>>(async () => false);
 export const useConfirm = () => useContext(ConfirmCtx);
+
+function ConfirmDialog({
+  confirmState,
+  onClose,
+}: {
+  confirmState: ConfirmOpts & { resolve: (v: boolean) => void };
+  onClose: (v: boolean) => void;
+}) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { cancelRef.current?.focus(); }, []);
+  return (
+    <div
+      className="noprint"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-title"
+      onClick={() => onClose(false)}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", display: "grid",
+        placeItems: "center", zIndex: 110,
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: tokens.surface, padding: 24, borderRadius: 12, width: 400, maxWidth: "90vw",
+        border: `1px solid ${tokens.border}`,
+        boxShadow: "0 8px 32px rgba(0,0,0,.12)",
+      }}>
+        <h3 id="confirm-title" className="disp" style={{ margin: 0, fontSize: 18, letterSpacing: 0.5, color: tokens.text }}>
+          {confirmState.title}
+        </h3>
+        {confirmState.message && (
+          <p style={{ color: tokens.muted, fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>
+            {confirmState.message}
+          </p>
+        )}
+        <div style={{ display: "flex", gap: 8, marginTop: 20, justifyContent: "flex-end" }}>
+          <Button ref={cancelRef} variant="ghost" onClick={() => onClose(false)}>Cancel</Button>
+          <Button variant={confirmState.danger ? "danger" : "primary"} onClick={() => onClose(true)}>
+            {confirmState.confirmText ?? "Confirm"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function Providers({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -147,31 +194,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
         {/* Confirm modal */}
         {confirmState && (
-          <div className="noprint" onClick={() => closeConfirm(false)} style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,.35)", display: "grid",
-            placeItems: "center", zIndex: 110,
-          }}>
-            <div onClick={(e) => e.stopPropagation()} style={{
-              background: tokens.surface, padding: 24, borderRadius: 12, width: 400, maxWidth: "90vw",
-              border: `1px solid ${tokens.border}`,
-              boxShadow: "0 8px 32px rgba(0,0,0,.12)",
-            }}>
-              <h3 className="disp" style={{ margin: 0, fontSize: 18, letterSpacing: 0.5, color: tokens.text }}>
-                {confirmState.title}
-              </h3>
-              {confirmState.message && (
-                <p style={{ color: tokens.muted, fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>
-                  {confirmState.message}
-                </p>
-              )}
-              <div style={{ display: "flex", gap: 8, marginTop: 20, justifyContent: "flex-end" }}>
-                <Button variant="ghost" onClick={() => closeConfirm(false)}>Cancel</Button>
-                <Button variant={confirmState.danger ? "danger" : "primary"} onClick={() => closeConfirm(true)}>
-                  {confirmState.confirmText ?? "Confirm"}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <ConfirmDialog confirmState={confirmState} onClose={closeConfirm} />
         )}
       </ConfirmCtx.Provider>
     </ToastCtx.Provider>

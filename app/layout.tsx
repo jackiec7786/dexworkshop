@@ -31,7 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           button:focus-visible { outline:2px solid #ff6a2b; outline-offset:2px; }
           button:hover:not(:disabled) { filter:brightness(0.95); }
           button:active:not(:disabled) { filter:brightness(0.90); }
+          button, a, input, select, textarea { touch-action: manipulation; }
           .disp { font-family:'Oswald',sans-serif; }
+          @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+          }
 
           /* ── Desktop left nav ── */
           .dsk-nav {

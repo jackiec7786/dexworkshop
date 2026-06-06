@@ -44,6 +44,9 @@ export default function Dashboard() {
   );
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const pendingSaves = useRef(0);
+  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ─── Shop Management state ────────────────────────────────────────────────
   const [showCalendar, setShowCalendar] = useState(false);
@@ -106,6 +109,8 @@ export default function Dashboard() {
   // ─── Job CRUD ────────────────────────────────────────────────────────────
   const saveJob = useCallback((job: Job) => {
     clearTimeout(saveTimers.current[job.id]);
+    pendingSaves.current++;
+    setSaveStatus("saving");
     saveTimers.current[job.id] = setTimeout(async () => {
       const res = await fetch(`/api/jobs/${job.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -115,6 +120,16 @@ export default function Dashboard() {
           discount: job.discount, tax_rate: job.tax_rate, deposit: job.deposit, photos: job.photos,
         }),
       });
+      pendingSaves.current = Math.max(0, pendingSaves.current - 1);
+      if (pendingSaves.current === 0) {
+        if (res.ok) {
+          setSaveStatus("saved");
+          clearTimeout(saveStatusTimer.current);
+          saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
+        } else {
+          setSaveStatus("idle");
+        }
+      }
       if (res.status === 401) onAuthError();
       else if (!res.ok) {
         const detail = await res.json().catch(() => null);
@@ -310,13 +325,15 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
+      <h1 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden",
+        clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }}>DEX Workshop</h1>
 
       {/* ── Desktop left nav ── */}
       {!isMobile && (
         <nav className="dsk-nav noprint">
           <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid #e5d5c0" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/dex-logo.png" alt="DEX" style={{ height: 26, objectFit: "contain" }} />
+            <img src="/dex-logo.png" alt="DEX" width={90} height={26} style={{ height: 26, objectFit: "contain" }} />
           </div>
           <div style={{ flex: 1, paddingTop: 8 }}>
             {([
@@ -397,7 +414,7 @@ export default function Dashboard() {
               </button>
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/dex-logo.png" alt="DEX" style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
+            <img src="/dex-logo.png" alt="DEX" width={104} height={30} style={{ height: 30, objectFit: "contain", flexShrink: 0 }} />
             {active && !anySection && (
               <span style={{ fontSize: 12, color: tokens.muted, overflow: "hidden",
                 textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginLeft: 8 }}>
@@ -487,7 +504,9 @@ export default function Dashboard() {
 
           {/* ── Job list sidebar ── */}
           <aside className="sidebar noprint">
-            <input placeholder="Search name / plate / model…" value={search}
+            <label htmlFor="job-search" style={{ position: "absolute", width: 1, height: 1,
+              overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }}>Search jobs</label>
+            <input id="job-search" placeholder="Search name / plate / model…" value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ ...fld, marginBottom: 10 }} />
 
@@ -538,7 +557,7 @@ export default function Dashboard() {
                   {j.scheduled_date && (
                     <div style={{ marginTop: 5, fontSize: 11, color: tokens.info,
                       display: "flex", alignItems: "center", gap: 3 }}>
-                      <span>📅</span>
+                      <Ico n="calendar" size={11} />
                       <span>{new Date(j.scheduled_date + "T00:00:00").toLocaleDateString("en-GB",
                         { day: "numeric", month: "short" })}</span>
                     </div>
@@ -584,11 +603,19 @@ export default function Dashboard() {
                     </div>
                     {/* Row 2: status + actions */}
                     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", rowGap: 8 }}>
-                      <select value={active.status}
+                      <select value={active.status} aria-label="Job status"
                         onChange={(e) => updateActive((j) => ({ ...j, status: e.target.value as Job["status"] }))}
                         style={{ ...fld, width: "auto", minWidth: 110, minHeight: 0 }}>
                         <option>Quote</option><option>Invoice</option><option>Paid</option>
                       </select>
+                      {saveStatus !== "idle" && (
+                        <span style={{ fontSize: 11, color: saveStatus === "saved" ? tokens.success : tokens.muted,
+                          display: "flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                            background: saveStatus === "saved" ? tokens.success : tokens.accent }} />
+                          {saveStatus === "saved" ? "Saved" : "Saving…"}
+                        </span>
+                      )}
                       <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
                         <button style={{ ...btn(), fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={printInspection}>
                           <Ico n="printer" size={13} /> Inspection
@@ -613,7 +640,7 @@ export default function Dashboard() {
                 {isMobile && (
                   <div className="noprint"
                     style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
-                    <select value={active.status}
+                    <select value={active.status} aria-label="Job status"
                       onChange={(e) => updateActive((j) => ({ ...j, status: e.target.value as Job["status"] }))}
                       style={{ ...fld, flex: 1, width: "auto" }}>
                       <option>Quote</option><option>Invoice</option><option>Paid</option>
@@ -717,7 +744,7 @@ export default function Dashboard() {
                                       ? { ...x, sqin: e.target.value ? Number(e.target.value) : undefined }
                                       : x) }))}
                                   style={{ ...fld, width: 80, padding: "5px 8px", fontSize: 12, minHeight: 0 }} />
-                                <button style={{ ...btn("#fef2f2", "#dc2626"), minHeight: 0 }}
+                                <button aria-label="Remove mark" style={{ ...btn("#fef2f2", "#dc2626"), minHeight: 0, padding: "6px 10px" }}
                                   onClick={() => updateActive((j) => ({
                                     ...j, marks: j.marks.filter((x) => x.id !== m.id) }))}>×</button>
                               </div>
@@ -751,12 +778,13 @@ export default function Dashboard() {
                                 <img src={p.url} alt={p.caption || ""}
                                   style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                 <button
+                                  aria-label="Remove photo"
                                   onClick={() => updateActive((j) => ({
                                     ...j, photos: j.photos.filter((x) => x.url !== p.url) }))}
                                   style={{ position: "absolute", top: 4, right: 4,
                                     background: "rgba(0,0,0,0.55)", color: "#ffffff",
                                     border: "none", borderRadius: 4, cursor: "pointer",
-                                    padding: "2px 7px", fontSize: 14, lineHeight: 1.4, minHeight: 0 }}>×</button>
+                                    padding: "6px 10px", fontSize: 14, lineHeight: 1.2, minHeight: 0 }}>×</button>
                               </div>
                               <input placeholder="Caption…" value={p.caption || ""}
                                 onChange={(e) => updateActive((j) => ({
@@ -764,7 +792,7 @@ export default function Dashboard() {
                                     x.url === p.url ? { ...x, caption: e.target.value } : x
                                   )
                                 }))}
-                                style={{ ...fld, fontSize: 11, padding: "4px 8px", minHeight: 0 }} />
+                                style={{ ...fld, fontSize: 12, padding: "6px 8px" }} />
                             </div>
                           ))}
                         </div>
@@ -801,8 +829,8 @@ export default function Dashboard() {
                                   gap: 8, marginBottom: 8 }}>
                                   <input style={fld} placeholder="Description" value={li.desc}
                                     onChange={(e) => editItem(li.id, "desc", e.target.value)} />
-                                  <button style={{ ...btn("#fef2f2", "#dc2626"),
-                                    alignSelf: "stretch", padding: "0 14px", minHeight: 0 }}
+                                  <button aria-label="Remove line item" style={{ ...btn("#fef2f2", "#dc2626"),
+                                    alignSelf: "stretch", padding: "0 14px" }}
                                     onClick={() => removeItem(li.id)}>×</button>
                                 </div>
                                 <div style={{ display: "grid",
@@ -847,7 +875,7 @@ export default function Dashboard() {
                                   <td style={{ ...td, color: tokens.muted }}>
                                     {money((li.qty || 0) * (li.price || 0))}
                                   </td>
-                                  <td style={td}><button style={btn("#fef2f2", "#dc2626")}
+                                  <td style={td}><button aria-label="Remove line item" style={btn("#fef2f2", "#dc2626")}
                                     onClick={() => removeItem(li.id)}>×</button></td>
                                 </tr>
                               ))}
@@ -1033,7 +1061,7 @@ const fld: React.CSSProperties = {
   padding: "9px 11px", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: "inherit",
 };
 const lbl: React.CSSProperties = {
-  fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#6b7280",
+  fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#6b7280",
   marginBottom: 5, display: "block", fontWeight: 600,
 };
 const hdrStyle: React.CSSProperties = {
@@ -1112,6 +1140,8 @@ const ICONS = {
   inspect:  ["M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2", "M9 5a2 2 0 002 2h2a2 2 0 002-2 2 2 0 00-2-2h-2a2 2 0 00-2 2z", "M9 12h6M9 15h3"],
   invoice:  ["M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z", "M14 2v6h6M16 13H8M16 17H8M10 9H8"],
   camera:   ["M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z", "M12 17a4 4 0 100-8 4 4 0 000 8z"],
+  phone:    ["M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"],
+  mail:     ["M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z", "M22 6l-10 7L2 6"],
 };
 type IconName = keyof typeof ICONS;
 
@@ -1532,7 +1562,7 @@ function PipelineSection({ isMobile, jobs, onSelectJob, onNewJob }: {
                       {j.scheduled_date && (
                         <div style={{ marginTop: 5, fontSize: 11, color: tokens.info,
                           display: "flex", alignItems: "center", gap: 4 }}>
-                          <span>📅</span>
+                          <Ico n="calendar" size={11} />
                           <span>{new Date(j.scheduled_date + "T00:00:00").toLocaleDateString("en-GB",
                             { day: "numeric", month: "short" })}</span>
                         </div>
@@ -2034,10 +2064,14 @@ function CustomerDetail({ selected, notesDraft, setNotesDraft, tagsDraft, toggle
               {selected.name || "Unnamed"}
             </div>
             {selected.phone && (
-              <div style={{ fontSize: 13, color: tokens.muted, marginTop: 3 }}>📱 {selected.phone}</div>
+              <div style={{ fontSize: 13, color: tokens.muted, marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+                <Ico n="phone" size={13} /> {selected.phone}
+              </div>
             )}
             {selected.email && (
-              <div style={{ fontSize: 13, color: tokens.muted, marginTop: 2 }}>✉ {selected.email}</div>
+              <div style={{ fontSize: 13, color: tokens.muted, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+                <Ico n="mail" size={13} /> {selected.email}
+              </div>
             )}
           </div>
           <button style={{ ...btn("#ff6a2b", "#ffffff"), padding: "8px 16px" }}
