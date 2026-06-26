@@ -1,0 +1,544 @@
+# Instincts generated from https://github.com/jackiec7786/dexworkshop
+# Generated: 2026-06-04T04:12:03.765Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: dexworkshop-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Commit Length
+
+## Action
+
+Write moderate-length commit messages (~59 characters)
+
+## Evidence
+
+- Average commit message length: 59 chars
+- Based on 13 commits
+
+---
+id: dexworkshop-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: dexworkshop-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: dexworkshop-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: dexworkshop-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: dexworkshop-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~9x per month
+- Files: **/schema.*
+
+---
+id: dexworkshop-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~18x per month
+- Files: app/*, app/api/expenses/[id]/*, app/api/expenses/*
+
+---
+id: dexworkshop-workflow-add-new-domain-entity-with-crud-api
+trigger: "when doing add new domain entity with crud api"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Workflow Add New Domain Entity With Crud Api
+
+## Action
+
+Follow the add-new-domain-entity-with-crud-api workflow:
+1. Add new table DDL to db/schema.sql
+2. Create GET/POST and PATCH/DELETE API routes under app/api/[entity]/ and app/api/[entity]/[id]/route.ts
+3. Add types/constants for entity to components/shared.tsx
+4. Integrate new entity section into app/DashboardClient.tsx (UI, forms, lists, badges, etc.)
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: db/schema.sql, app/api/[entity]/route.ts, app/api/[entity]/[id]/route.ts
+
+---
+id: dexworkshop-workflow-database-schema-and-api-extension
+trigger: "when doing database schema and api extension"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Workflow Database Schema And Api Extension
+
+## Action
+
+Follow the database-schema-and-api-extension workflow:
+1. ALTER TABLE statement added to db/schema.sql (or migration run externally)
+2. Update API route(s) for the entity to handle new field
+3. Update types/constants in components/shared.tsx if needed
+4. Update UI in app/DashboardClient.tsx to use/display new field
+5. Update validation in lib/validation.ts if applicable
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: db/schema.sql, app/api/[entity]/[id]/route.ts, components/shared.tsx
+
+---
+id: dexworkshop-workflow-ui-theme-or-layout-overhaul
+trigger: "when doing ui theme or layout overhaul"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Workflow Ui Theme Or Layout Overhaul
+
+## Action
+
+Follow the ui-theme-or-layout-overhaul workflow:
+1. Update layout and theme tokens in app/layout.tsx and/or CSS
+2. Update shared UI components in components/shared.tsx and components/ui.tsx
+3. Update main client UI in app/DashboardClient.tsx for new structure or navigation
+4. Adjust responsive behaviors and navigation patterns
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: app/layout.tsx, components/shared.tsx, components/ui.tsx
+
+---
+id: dexworkshop-workflow-svg-asset-and-inspection-diagram-update
+trigger: "when doing svg asset and inspection diagram update"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/jackiec7786/dexworkshop
+---
+
+# Dexworkshop Workflow Svg Asset And Inspection Diagram Update
+
+## Action
+
+Follow the svg-asset-and-inspection-diagram-update workflow:
+1. Update or replace SVG assets in public/ (e.g., car-template.svg)
+2. Update diagram rendering logic in components/shared.tsx
+3. Update usage in app/DashboardClient.tsx if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: public/car-template.svg, components/shared.tsx, app/DashboardClient.tsx
+
+---
+id: dexworkshop-instinct-file-naming
+trigger: "When creating a new file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct File Naming
+
+## Action
+
+Name the file using camelCase (e.g., dashboardClient.tsx)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+- Files like app/layout.tsx, components/shared.tsx
+
+---
+id: dexworkshop-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Function Naming
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: dexworkshop-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: dexworkshop-instinct-constant-naming
+trigger: "When defining a new constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: dexworkshop-instinct-import-alias
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Import Alias
+
+## Action
+
+Use alias import style
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: dexworkshop-instinct-named-exports
+trigger: "When exporting functions or components"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Named Exports
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: dexworkshop-instinct-try-catch-errors
+trigger: "When handling errors in code"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Try Catch Errors
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style
+
+---
+id: dexworkshop-instinct-testing-location
+trigger: "When writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Testing Location
+
+## Action
+
+Place tests in a separate folder from src code
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+
+---
+id: dexworkshop-instinct-git-commit-prefix
+trigger: "When writing a commit message for a bug fix"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Git Commit Prefix
+
+## Action
+
+Prefix the commit message with 'Fix:'
+
+## Evidence
+
+- Commits like 'Fix: inspection marks (and all job saves) failing when scheduled_date column missing'
+
+---
+id: dexworkshop-instinct-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Git Commit Length
+
+## Action
+
+Keep the commit message concise (around 59 characters on average)
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: dexworkshop-instinct-git-commit-freeform
+trigger: "When writing commit messages for features or refactors"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Git Commit Freeform
+
+## Action
+
+Use descriptive, freeform commit messages without strict prefixes (except for fixes)
+
+## Evidence
+
+- Commits like 'Make app mobile-first: panel switching, bottom nav, responsive grids'
+
+---
+id: dexworkshop-instinct-add-new-domain-entity
+trigger: "When someone wants to introduce a new tracked entity (table) with CRUD operations and UI section"
+confidence: 0.98
+domain: workflow
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Add New Domain Entity
+
+## Action
+
+Add new table DDL to db/schema.sql, create CRUD API routes, add types/constants, and integrate into DashboardClient UI
+
+## Evidence
+
+- Workflow: add-new-domain-entity-with-crud-api
+- Commits and files in workflow example
+
+---
+id: dexworkshop-instinct-database-schema-extension
+trigger: "When someone wants to add a new column/feature to an existing entity"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Database Schema Extension
+
+## Action
+
+ALTER TABLE in db/schema.sql, update API route(s), update types/constants, update UI, and update validation if needed
+
+## Evidence
+
+- Workflow: database-schema-and-api-extension
+- Commits and files in workflow example
+
+---
+id: dexworkshop-instinct-ui-theme-overhaul
+trigger: "When someone wants to change the overall look, color scheme, or mobile/desktop layout of the app"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Ui Theme Overhaul
+
+## Action
+
+Update layout/theme tokens, shared UI components, main client UI, and adjust responsive behaviors
+
+## Evidence
+
+- Workflow: ui-theme-or-layout-overhaul
+- Commits and files in workflow example
+
+---
+id: dexworkshop-instinct-svg-inspection-diagram-update
+trigger: "When someone wants to change the car inspection diagram visuals or logic"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: jackiec7786/dexworkshop
+---
+
+# Dexworkshop Instinct Svg Inspection Diagram Update
+
+## Action
+
+Update/replace SVG assets, update diagram rendering logic, and update usage in DashboardClient if needed
+
+## Evidence
+
+- Workflow: svg-asset-and-inspection-diagram-update
+- Commits and files in workflow example
+
